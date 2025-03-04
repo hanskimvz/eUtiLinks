@@ -22,8 +22,9 @@ class ApiConstants {
   static const int serverPort = 5100;
   
   // 서버 주소 (운영 환경)
-  static const String prodServerAddress = 'https://api.example.com:443';
-  static const int prodServerPort = 443;
+  // static const String prodServerAddress = 'https://api.example.com:443';
+  static const String prodServerAddress = 'http://192.168.1.252:5100';
+  static const int prodServerPort = 5100;
   
   // 현재 사용할 서버 환경 (개발/운영)
   static bool _useDevServer = true;

@@ -4,8 +4,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../info_management/presentation/pages/info_management_page.dart';
+import '../../../installer/presentation/pages/installer_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io' show Platform;
 // API 상수 import
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/auth_service.dart';
@@ -46,10 +48,16 @@ class _LoginPageState extends State<LoginPage> {
     final isLoggedIn = await AuthService.isLoggedIn();
     
     if (isLoggedIn && mounted) {
-      // 이미 로그인되어 있으면 정보관리 페이지로 이동
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InfoManagementPage()),
-      );
+      // 이미 로그인되어 있으면 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 정보관리 페이지로 이동
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InstallerPage()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InfoManagementPage()),
+        );
+      }
     } else {
       setState(() {
         _isLoading = false;
@@ -169,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
           });
         }
       } catch (e) {
-        // print('응답 파싱 오류: $e');
+        print('응답 파싱 오류: $e');
         setState(() {
           _errorMessage = '서버 응답을 처리할 수 없습니다.';
           _isLoading = false;
@@ -224,9 +232,16 @@ class _LoginPageState extends State<LoginPage> {
     }
     
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InfoManagementPage()),
-      );
+      // 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 info_management 페이지로 이동
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InstallerPage()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InfoManagementPage()),
+        );
+      }
     }
   }
   
@@ -252,9 +267,16 @@ class _LoginPageState extends State<LoginPage> {
     }
     
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InfoManagementPage()),
-      );
+      // 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 info_management 페이지로 이동
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InstallerPage()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InfoManagementPage()),
+        );
+      }
     }
   }
 

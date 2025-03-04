@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/menu_constants.dart';
 import '../../../../core/constants/auth_service.dart';
 import '../../../../core/models/device_model.dart';
@@ -8,6 +9,7 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'installer_device_info.dart';
 
 class InstallerPage extends StatefulWidget {
@@ -36,7 +38,52 @@ class _InstallerPageState extends State<InstallerPage> {
     _deviceService = DeviceService(
       baseUrl: ApiConstants.serverUrl,
     );
-    _loadDevices();
+    _checkLoginStatus();
+  }
+
+  // 로그인 상태 확인 및 자동 로그인 처리
+  Future<void> _checkLoginStatus() async {
+    final currentUser = await AuthService.getCurrentUser();
+    
+    if (currentUser == null) {
+      // 모바일 기기에서 자동 로그인 시도
+      if (Platform.isAndroid || Platform.isIOS) {
+        final prefs = await SharedPreferences.getInstance();
+        final savedId = prefs.getString('saved_id');
+        final savedPassword = prefs.getString('saved_password');
+        
+        if (savedId != null && savedPassword != null) {
+          try {
+            await AuthService.login(savedId, savedPassword);
+            _loadDevices();
+          } catch (e) {
+            // 자동 로그인 실패 시 로그인 페이지로 이동
+            if (mounted) {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+              );
+            }
+          }
+        } else {
+          // 저장된 로그인 정보가 없으면 로그인 페이지로 이동
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const LoginPage()),
+            );
+          }
+        }
+      } else {
+        // 모바일이 아닌 경우 로그인 페이지로 이동
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
+      }
+    } else {
+      // 이미 로그인된 상태면 장치 목록 로드
+      _loadDevices();
+    }
   }
 
   @override

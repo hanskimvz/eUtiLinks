@@ -1,4 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'api_constants.dart';
 
 /// 인증 관련 기능을 제공하는 서비스 클래스
 class AuthService {
@@ -8,6 +11,52 @@ class AuthService {
   static const String _roleKey = '_role';
   static const String _nameKey = '_name';
   static const String _userseqKey = '_userseq';
+  
+  /// 사용자 로그인을 처리합니다.
+  static Future<Map<String, dynamic>> login(String id, String password) async {
+    final url = '${ApiConstants.serverUrl}/api/login';
+    
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'password': password,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        if (data['result'] == 'success') {
+          final userInfo = data['data'];
+          
+          // 사용자 정보 저장
+          await saveUserInfo(
+            id: userInfo['id'] ?? id,
+            dbName: userInfo['db_name'] ?? '',
+            role: userInfo['role'] ?? '',
+            name: userInfo['name'] ?? '',
+            userseq: userInfo['userseq']?.toString() ?? '',
+          );
+          
+          // 자동 로그인을 위해 아이디와 비밀번호 저장
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('saved_id', id);
+          await prefs.setString('saved_password', password);
+          
+          return userInfo;
+        } else {
+          throw Exception(data['message'] ?? '로그인에 실패했습니다.');
+        }
+      } else {
+        throw Exception('서버 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('로그인 중 오류가 발생했습니다: $e');
+    }
+  }
   
   /// 사용자가 로그인되어 있는지 확인합니다.
   static Future<bool> isLoggedIn() async {
