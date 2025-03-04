@@ -86,8 +86,24 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
     });
   }
 
-  Color _getStatusColor(bool flag) {
-    return flag ? Colors.green : Colors.grey;
+  Color _getStatusColor(String? flag) {
+    if (flag == null || flag.isEmpty) {
+      return Colors.grey;
+    }
+    
+    switch (flag.toLowerCase()) {
+      case 'active':
+      case 'normal':
+        return Colors.green;
+      case 'inactive':
+        return Colors.grey;
+      case 'warning':
+        return Colors.orange;
+      case 'error':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   Color _getBatteryLevelColor(int level) {
@@ -157,7 +173,7 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
           TextCellValue(device.meterId ?? ''),
           TextCellValue(device.lastCount?.toString() ?? ''),
           TextCellValue(device.lastAccess ?? ''),
-          TextCellValue(device.flag ? '활성' : '비활성'),
+          TextCellValue(_getStatusText(device.flag)),
           TextCellValue(device.battery?.toString() ?? ''),
         ]);
       }
@@ -309,7 +325,7 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
                 for (final uid in deviceUids) {
                   final newDevice = DeviceModel(
                     deviceUid: uid,
-                    flag: true,
+                    flag: 'active',
                     lastCount: 0,
                     battery: 100,
                     releaseDate: releaseDateController.text,
@@ -434,13 +450,13 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
                   ),
                   _buildStatCard(
                     title: localizations.activeDevices,
-                    value: _devices.where((d) => d.flag).length.toString(),
+                    value: _devices.where((d) => d.flag?.toLowerCase() == 'active' || d.flag?.toLowerCase() == 'normal').length.toString(),
                     icon: Icons.check_circle,
                     color: Colors.green,
                   ),
                   _buildStatCard(
                     title: localizations.inactiveDevices,
-                    value: _devices.where((d) => !d.flag).length.toString(),
+                    value: _devices.where((d) => d.flag?.toLowerCase() == 'inactive' || d.flag == null || d.flag!.isEmpty).length.toString(),
                     icon: Icons.cancel,
                     color: Colors.grey,
                   ),
@@ -552,7 +568,7 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
                                       DataColumn(
                                         label: Text(localizations.status),
                                         onSort: (columnIndex, ascending) {
-                                          _sort<num>((device) => device.flag ? 1 : 0, columnIndex, ascending);
+                                          _sort<num>((device) => _getStatusValue(device.flag), columnIndex, ascending);
                                         },
                                       ),
                                       DataColumn(
@@ -628,7 +644,7 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
                                                       ),
                                                     ),
                                                     const SizedBox(width: 8),
-                                                    Text(device.flag ? localizations.active : localizations.inactive),
+                                                    Text(_getStatusText(device.flag)),
                                                   ],
                                                 ),
                                               ),
@@ -697,5 +713,45 @@ class _DeviceManagementPageState extends State<DeviceManagementPage> {
         ),
       ],
     );
+  }
+
+  int _getStatusValue(String? flag) {
+    if (flag == null || flag.isEmpty) {
+      return 0;
+    }
+    
+    switch (flag.toLowerCase()) {
+      case 'active':
+      case 'normal':
+        return 1;
+      case 'inactive':
+        return 0;
+      case 'warning':
+        return 2;
+      case 'error':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
+  String _getStatusText(String? flag) {
+    if (flag == null || flag.isEmpty) {
+      return '알 수 없음';
+    }
+    
+    switch (flag.toLowerCase()) {
+      case 'active':
+      case 'normal':
+        return '정상';
+      case 'inactive':
+        return '비활성';
+      case 'warning':
+        return '주의';
+      case 'error':
+        return '오류';
+      default:
+        return flag;
+    }
   }
 } 

@@ -153,6 +153,26 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
     );
   }
 
+  String _getStatusText(String? flag) {
+    if (flag == null || flag.isEmpty) {
+      return '알 수 없음';
+    }
+    
+    switch (flag.toLowerCase()) {
+      case 'active':
+      case 'normal':
+        return '정상';
+      case 'inactive':
+        return '비활성';
+      case 'warning':
+        return '주의';
+      case 'error':
+        return '오류';
+      default:
+        return flag;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
@@ -202,7 +222,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
                     _buildInfoRow('단말기 UID', _device!.deviceUid),
                     _buildInfoRow('마지막 검침', _device!.lastCount?.toString() ?? '-'),
                     _buildInfoRow('마지막 통신', _device!.lastAccess ?? '-'),
-                    _buildInfoRow('상태', _device!.flag ? '활성' : '비활성'),
+                    _buildInfoRow('상태', _getStatusText(_device!.flag)),
                     _buildInfoRow('가동시간', _device!.uptime.toString()),
                     _buildInfoRow('초기 통신', _device!.initialAccess ?? '-'),
                     _buildInfoRow('배터리', '${_device!.battery ?? 0}%'),

@@ -24,6 +24,10 @@ class SubscriberModel {
   final String? inOutdoor;
   final String? bindDeviceId;
   final String? bindDate;
+  final int? no_;
+  final String? flag;
+  final String? lastCount;
+  final String? lastAccess;
 
   SubscriberModel({
     required this.subscriberId,
@@ -51,6 +55,10 @@ class SubscriberModel {
     this.inOutdoor,
     this.bindDeviceId,
     this.bindDate,
+    this.no_,
+    this.flag,
+    this.lastCount,
+    this.lastAccess,
   });
 
   factory SubscriberModel.fromJson(Map<String, dynamic> json) {
@@ -86,6 +94,19 @@ class SubscriberModel {
         }
       }
     }
+    
+    int? noValue;
+    if (json['no_'] != null) {
+      if (json['no_'] is int) {
+        noValue = json['no_'];
+      } else if (json['no_'] is String) {
+        try {
+          noValue = int.parse(json['no_']);
+        } catch (e) {
+          noValue = null;
+        }
+      }
+    }
 
     return SubscriberModel(
       subscriberId: json['_id'] ?? json['subscriber_id'] ?? '',
@@ -113,6 +134,10 @@ class SubscriberModel {
       inOutdoor: json['in_outdoor'],
       bindDeviceId: json['bind_device_id'],
       bindDate: json['bind_date'],
+      no_: noValue,
+      flag: json['flag'],
+      lastCount: json['last_count'],
+      lastAccess: json['last_access'],
     );
   }
 } 

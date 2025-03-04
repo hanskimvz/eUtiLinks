@@ -2,7 +2,7 @@ class DeviceModel {
   final String deviceUid;
   final int? lastCount;
   final String? lastAccess;
-  final bool flag;
+  final String? flag;
   final int? uptime;
   final String? initialAccess;
   final int? refInterval;
@@ -25,6 +25,7 @@ class DeviceModel {
   final String? inOutdoor;
   final String? releaseDate;
   final String? installerId;
+  final int? no_;
 
   DeviceModel({
     required this.deviceUid,
@@ -53,14 +54,39 @@ class DeviceModel {
     this.inOutdoor,
     this.releaseDate,
     this.installerId,
+    this.no_,
   });
 
   factory DeviceModel.fromJson(Map<String, dynamic> json) {
+    int? noValue;
+    if (json['no_'] != null) {
+      if (json['no_'] is int) {
+        noValue = json['no_'];
+      } else if (json['no_'] is String) {
+        try {
+          noValue = int.parse(json['no_']);
+        } catch (e) {
+          noValue = null;
+        }
+      }
+    }
+    
+    String? flagValue;
+    if (json['flag'] != null) {
+      if (json['flag'] is String) {
+        flagValue = json['flag'];
+      } else if (json['flag'] is bool) {
+        flagValue = json['flag'] ? 'active' : 'inactive';
+      } else {
+        flagValue = json['flag'].toString();
+      }
+    }
+
     return DeviceModel(
       deviceUid: json['device_uid'] ?? '',
       lastCount: json['last_count'] is int ? json['last_count'] : null,
       lastAccess: json['last_access'],
-      flag: json['flag'] ?? false,
+      flag: flagValue,
       uptime: json['uptime'] is int ? json['uptime'] : null,
       initialAccess: json['initial_access'],
       refInterval: json['ref_interval'] is int ? json['ref_interval'] : null,
@@ -83,6 +109,7 @@ class DeviceModel {
       inOutdoor: json['in_outdoor'],
       releaseDate: json['release_date'],
       installerId: json['installer_id'],
+      no_: noValue,
     );
   }
 } 

@@ -192,5 +192,6 @@
   "subscriberClass": "Class",
   "inOutdoor": "In/Outdoor",
   "bindDeviceId": "Device ID",
-  "bindDate": "Binding Date"
+  "bindDate": "Binding Date",
+  "deviceList": "Device List"
 } 
