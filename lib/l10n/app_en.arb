@@ -193,5 +193,16 @@
   "inOutdoor": "In/Outdoor",
   "bindDeviceId": "Device ID",
   "bindDate": "Binding Date",
-  "deviceList": "Device List"
+  "deviceList": "Device List",
+  "installerPageDescription": "Access installer-related functions.",
+  "deviceSearch": "Device Search",
+  "deviceSearchHint": "Search by Device UID, Meter ID, etc.",
+  "statusUnknown": "Unknown",
+  "statusNormal": "Normal",
+  "statusInactive": "Inactive",
+  "statusWarning": "Warning",
+  "statusError": "Error",
+  "scanWithCamera": "Scan with Camera",
+  "imageCaptured": "Image captured: {path}",
+  "cameraError": "Camera error: {error}"
 } 

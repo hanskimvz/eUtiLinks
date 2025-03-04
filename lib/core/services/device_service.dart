@@ -222,9 +222,9 @@ class DeviceService {
   }
 
   Future<List<DeviceModel>> getDevicesWithFilter({
-    required String page,
-    required List<String> fields,
-    required Map<String, dynamic> filter,
+    String page = 'device_info',
+    List<String>? fields,
+    Map<String, dynamic>? filter
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -232,42 +232,67 @@ class DeviceService {
       final loginId = prefs.getString('_login_id') ?? '';
       final role = prefs.getString('_role') ?? '';
 
+      final Map<String, dynamic> requestBody = {
+        'page': page,
+        'format': 'json',
+        'fields': fields ?? [
+          'device_uid',
+          'last_count',
+          'last_access',
+          'flag',
+          'uptime',
+          'initial_access',
+          'ref_interval',
+          'minimum',
+          'maximum',
+          'battery',
+          'customer_name',
+          'customer_no',
+          'addr_prov',
+          'addr_city',
+          'addr_dist',
+          'addr_detail',
+          'share_house',
+          'addr_apt',
+          'category',
+          'subscriber_no',
+          'meter_id',
+          'class',
+          'in_outdoor',
+          'release_date',
+          'installer_id'
+        ],
+        'db_name': dbName,
+        'user_id': loginId,
+        'role': role,
+      };
+
+      // 필터가 있으면 추가
+      if (filter != null && filter.isNotEmpty) {
+        requestBody['filter'] = filter;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/api/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': page,
-          'format': 'json',
-          'fields': fields,
-          'filter': filter,
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
-        final dynamic responseData = jsonDecode(response.body);
-        
-        // API 응답이 맵 형태인 경우 (data 필드 내에 리스트가 있는 경우)
-        if (responseData is Map && responseData.containsKey('data')) {
-          final List<dynamic> data = responseData['data'];
-          return data.map((json) => DeviceModel.fromJson(json)).toList();
-        } 
-        // API 응답이 직접 리스트인 경우
-        else if (responseData is List) {
-          return responseData.map((json) => DeviceModel.fromJson(json)).toList();
-        }
-        // 다른 형식의 응답인 경우
-        else {
-          throw Exception('Unexpected response format');
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['code'] == 200) {
+          final List<dynamic> devicesJson = jsonResponse['data'];
+          return devicesJson.map((json) => DeviceModel.fromJson(json)).toList();
+        } else {
+          throw Exception('API 응답 오류: ${jsonResponse['message']}');
         }
       } else {
-        throw Exception('Failed to load devices: ${response.statusCode}');
+        throw Exception('서버 오류: ${response.statusCode}');
       }
     } catch (e) {
-      // print('Error fetching devices with filter: $e');
-      throw Exception('Error fetching devices: $e');
+      throw Exception('단말기 정보 조회 실패: $e');
     }
   }
 } 

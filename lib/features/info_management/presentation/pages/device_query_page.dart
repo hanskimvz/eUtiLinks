@@ -672,10 +672,15 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
                                                 onSelectChanged: (_) {
                                                   _showDeviceMenu(device);
                                                 },
-                                                color: MaterialStateProperty.resolveWith<Color?>(
-                                                  (Set<MaterialState> states) {
-                                                    if (states.contains(MaterialState.hovered)) {
-                                                      return Colors.blue.withOpacity(0.1);
+                                                color: WidgetStateProperty.resolveWith<Color?>(
+                                                  (Set<WidgetState> states) {
+                                                    if (states.contains(WidgetState.hovered)) {
+                                                      return Colors.blue.withValues(
+                                                        red: Colors.blue.r,
+                                                        green: Colors.blue.g,
+                                                        blue: Colors.blue.b,
+                                                        alpha: 0.1 * 255,
+                                                      );
                                                     }
                                                     return null;
                                                   },

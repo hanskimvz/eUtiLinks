@@ -12,6 +12,7 @@ class MainLayout extends StatefulWidget {
   final int? selectedSubMenuIndex;
   final Function(int)? onSubMenuSelected;
   final VoidCallback? onLogout;
+  final bool hideSidebar;
 
   const MainLayout({
     super.key,
@@ -21,6 +22,7 @@ class MainLayout extends StatefulWidget {
     this.selectedSubMenuIndex,
     this.onSubMenuSelected,
     this.onLogout,
+    this.hideSidebar = false,
   });
 
   @override
@@ -151,43 +153,44 @@ class _MainLayoutState extends State<MainLayout> {
       ),
       body: Row(
         children: [
-          // 서브메뉴 패널
-          Container(
-            width: 200,
-            color: const Color(0xFFF5F5F5), // 아주 약한 회색 배경색 적용
-            child: Column(
-              children: [
-                Container(
-                  color: AppTheme.brandColor,
-                  padding: const EdgeInsets.all(16.0),
-                  width: double.infinity,
-                  child: Text(
-                    _getMainMenuTitle(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppTheme.subtitleFontSize,
+          // 서브메뉴 패널 - hideSidebar가 true이면 표시하지 않음
+          if (!widget.hideSidebar)
+            Container(
+              width: 200,
+              color: const Color(0xFFF5F5F5), // 아주 약한 회색 배경색 적용
+              child: Column(
+                children: [
+                  Container(
+                    color: AppTheme.brandColor,
+                    padding: const EdgeInsets.all(16.0),
+                    width: double.infinity,
+                    child: Text(
+                      _getMainMenuTitle(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppTheme.subtitleFontSize,
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: subMenuItems.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        contentPadding: const EdgeInsets.only(left: 20.0, right: 16.0), // 왼쪽에 5픽셀 추가 여백
-                        title: Text(subMenuItems[index]),
-                        selected: _selectedSubMenuIndex == index,
-                        selectedTileColor: Colors.grey[200],
-                        selectedColor: AppTheme.brandColor,
-                        onTap: () => _onSubMenuTap(index),
-                      );
-                    },
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: subMenuItems.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          contentPadding: const EdgeInsets.only(left: 20.0, right: 16.0), // 왼쪽에 5픽셀 추가 여백
+                          title: Text(subMenuItems[index]),
+                          selected: _selectedSubMenuIndex == index,
+                          selectedTileColor: Colors.grey[200],
+                          selectedColor: AppTheme.brandColor,
+                          onTap: () => _onSubMenuTap(index),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
           // 메인 콘텐츠 영역
           Expanded(
             child: Container(
