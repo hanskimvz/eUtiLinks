@@ -9,6 +9,7 @@ import 'permission_management_page.dart';
 import 'user_management_page.dart';
 import 'location_management_page.dart';
 import 'device_management_page.dart';
+import 'subscriber_management_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,20 +22,21 @@ class _SettingsPageState extends State<SettingsPage> {
   int _selectedSubMenuIndex = 0;
 
   Future<void> _logout() async {
+    final localizations = AppLocalizations.of(context)!;
     // 로그아웃 확인 다이얼로그 표시
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('정말 로그아웃 하시겠습니까?'),
+        title: Text(localizations.logoutTitle),
+        content: Text(localizations.logoutConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
+            child: Text(localizations.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('로그아웃'),
+            child: Text(localizations.logout),
           ),
         ],
       ),
@@ -82,7 +84,7 @@ class _SettingsPageState extends State<SettingsPage> {
       case 4:
         return const DeviceManagementPage();
       case 5:
-        return _buildComingSoonPage('가입자 관리');
+        return const SubscriberManagementPage();
       case 6:
         return _buildComingSoonPage('이벤트 관리');
       case 7:

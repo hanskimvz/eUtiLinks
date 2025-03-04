@@ -122,4 +122,12 @@ class MenuConstants {
     '이벤트 관리',
     '일일 데이터 관리',
   ];
+
+  static String getDeviceManagement(BuildContext context) {
+    return AppLocalizations.of(context)?.deviceManagement ?? '단말기 관리';
+  }
+
+  static String getSubscriberManagement(BuildContext context) {
+    return AppLocalizations.of(context)?.subscriberManagement ?? '가입자 관리';
+  }
 } 

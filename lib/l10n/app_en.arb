@@ -78,6 +78,7 @@
   "installDate": "Install Date",
   "lastCommunication": "Last Communication",
   "subscriberId": "Subscriber ID",
+  "subscriberNo": "Subscriber No",
   "subscriberName": "Subscriber Name",
   "subscriberNameHint": "e.g. John Doe",
   "batteryLevel": "Battery Level",
@@ -87,6 +88,36 @@
   "needsAttention": "Needs Attention",
   
   "subscriberManagement": "Subscriber Management",
+  "subscriberManagementDescription": "Manage subscribers and their information.",
+  "searchSubscriber": "Search Subscriber",
+  "searchSubscriberHint": "Search by ID, name, phone, email, etc.",
+  "addSubscriber": "Add Subscriber",
+  "editSubscriber": "Edit Subscriber",
+  "deleteSubscriber": "Delete Subscriber",
+  "deleteSubscriberConfirm": "Are you sure you want to delete subscriber {name}?",
+  "subscriberAddedSuccess": "Subscriber has been added successfully.",
+  "subscriberEditedSuccess": "Subscriber information has been updated successfully.",
+  "subscriberDeletedSuccess": "Subscriber has been deleted successfully.",
+  "phoneNumber": "Phone Number",
+  "phoneNumberHint": "e.g. 010-1234-5678",
+  "email": "Email",
+  "emailHint": "e.g. example@email.com",
+  "contractType": "Contract Type",
+  "contractTypeHint": "e.g. Standard, Premium",
+  "registrationDate": "Registration Date",
+  "lastPaymentDate": "Last Payment Date",
+  "deviceCount": "Device Count",
+  "memo": "Memo",
+  "memoHint": "Additional notes about the subscriber",
+  "totalSubscribers": "Total Subscribers",
+  "activeSubscribers": "Active Subscribers",
+  "inactiveSubscribers": "Inactive Subscribers",
+  "exportSubscribersToExcel": "Export to Excel",
+  "subscriberList": "Subscriber List",
+  "rowsPerPage": "Rows per page",
+  "status": "Status",
+  "actions": "Actions",
+  
   "eventManagement": "Event Management",
   "dailyDataManagement": "Daily Data Management",
 
@@ -98,12 +129,8 @@
   "code": "Code",
   "id": "ID",
   "name": "Name",
-  "email": "Email",
   "language": "Language",
   "role": "Role",
-  "registrationDate": "Registration Date",
-  "status": "Status",
-  "actions": "Actions",
   "korean": "Korean",
   "english": "English",
   "chinese": "Chinese",
@@ -158,5 +185,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  
+  "shareHouse": "Share House",
+  "category": "Category",
+  "subscriberClass": "Class",
+  "inOutdoor": "In/Outdoor",
+  "bindDeviceId": "Device ID",
+  "bindDate": "Binding Date"
 } 

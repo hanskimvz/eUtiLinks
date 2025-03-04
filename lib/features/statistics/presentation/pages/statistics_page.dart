@@ -20,20 +20,21 @@ class _StatisticsPageState extends State<StatisticsPage> {
   int _selectedSubMenuIndex = 0;
 
   Future<void> _logout() async {
+    final localizations = AppLocalizations.of(context)!;
     // 로그아웃 확인 다이얼로그 표시
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('정말 로그아웃 하시겠습니까?'),
+        title: Text(localizations.logoutTitle),
+        content: Text(localizations.logoutConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('취소'),
+            child: Text(localizations.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('로그아웃'),
+            child: Text(localizations.logout),
           ),
         ],
       ),
