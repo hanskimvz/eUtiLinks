@@ -212,5 +212,10 @@
     "r6hours": "6시간",
     "r12hours": "12시간",
     "r1day": "1일",
-    "selectInterval": "주기 선택"
+    "selectInterval": "주기 선택",
+    "scanCompleted": "코드 스캔 완료: {code}",
+    "qrScanTitle": "QR/바코드 스캔",
+    "toggleFlash": "플래시 켜기/끄기",
+    "switchCamera": "카메라 전환",
+    "scanInstructions": "바코드나 QR 코드를 스캔하세요"
 } 

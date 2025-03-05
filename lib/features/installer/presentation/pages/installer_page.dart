@@ -6,11 +6,15 @@ import '../../../../core/constants/auth_service.dart';
 import '../../../../core/models/device_model.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/utils/scanner_utils.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'installer_device_info.dart';
+// import 'package:permission_handler/permission_handler.dart';
+// import 'package:app_settings/app_settings.dart';
+// import './qr_scanner_page.dart';
 
 class InstallerPage extends StatefulWidget {
   const InstallerPage({super.key});
@@ -231,34 +235,33 @@ class _InstallerPageState extends State<InstallerPage> {
 
   Future<void> _openCamera() async {
     final localizations = AppLocalizations.of(context)!;
-    final ImagePicker picker = ImagePicker();
-    try {
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-      
-      if (photo != null) {
-        // 여기서 이미지를 처리하는 로직을 추가할 수 있습니다.
-        // 예: QR 코드 스캔, 바코드 인식 등
+    
+    // ScannerUtils 클래스를 사용하여 QR 코드 스캔
+    final result = await ScannerUtils.scanQRCode(
+      context: context,
+      hintText: localizations.deviceSearchHint,
+      onSuccess: (code) {
+        setState(() {
+          _searchController.text = code;
+        });
         
-        // 임시로 스낵바 표시
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations.imageCaptured(photo.path)),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+        // 검색 필터링 실행
+        _filterDevices(code);
+        
+        // 다국어 지원 - scanCompleted 메서드 직접 호출
+        final message = localizations.scanCompleted(code);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(localizations.cameraError('$e')),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            content: Text(message),
+            duration: const Duration(seconds: 3),
           ),
         );
-      }
+      },
+    );
+    
+    // 결과가 있고 onSuccess 콜백이 호출되지 않은 경우 여기서 처리
+    if (result != null && mounted) {
+      // 이미 onSuccess에서 처리했으므로 여기서는 추가 작업 불필요
     }
   }
 

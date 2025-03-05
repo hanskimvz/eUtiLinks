@@ -220,5 +220,10 @@
   "r6hours": "6 Hours",
   "r12hours": "12 Hours",
   "r1day": "1 Day",
-  "selectInterval": "Select Interval"
+  "selectInterval": "Select Interval",
+  "scanCompleted": "Code scan completed: {code}",
+  "qrScanTitle": "QR/Barcode Scan",
+  "toggleFlash": "Toggle Flash",
+  "switchCamera": "Switch Camera",
+  "scanInstructions": "Scan a barcode or QR code"
 } 

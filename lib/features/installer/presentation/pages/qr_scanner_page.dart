@@ -3,7 +3,23 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class QRScannerPage extends StatefulWidget {
-  const QRScannerPage({super.key});
+  /// 스캔 결과에 대한 힌트 텍스트 (선택 사항)
+  final String? hintText;
+  
+  /// 스캔 후 자동으로 이전 화면으로 돌아갈지 여부
+  final bool autoReturn;
+  
+  /// 스캔 결과를 처리하는 콜백 함수 (선택 사항)
+  /// autoReturn이 false인 경우 필수
+  final Function(String)? onScan;
+
+  const QRScannerPage({
+    super.key, 
+    this.hintText,
+    this.autoReturn = true,
+    this.onScan,
+  }) : assert(autoReturn == true || onScan != null, 
+      'onScan 콜백은 autoReturn이 false일 때 필수입니다.');
 
   @override
   State<QRScannerPage> createState() => _QRScannerPageState();
@@ -21,17 +37,45 @@ class _QRScannerPageState extends State<QRScannerPage> {
     super.dispose();
   }
 
+  void _handleScan(String code) {
+    if (!_isScanning) return;
+    
+    setState(() {
+      _isScanning = false;
+    });
+    
+    if (widget.autoReturn) {
+      // 스캔 결과를 이전 화면으로 전달
+      Navigator.pop(context, code);
+    } else if (widget.onScan != null) {
+      // 콜백 함수 호출
+      widget.onScan!(code);
+      // 스캔 상태 초기화
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            _isScanning = true;
+          });
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 로컬라이제이션 객체 가져오기
+    final localizations = AppLocalizations.of(context)!;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR/바코드 스캔'),
+        title: Text(localizations.qrScanTitle),
         actions: [
           IconButton(
             icon: Icon(
               _isFlashOn ? Icons.flash_on : Icons.flash_off,
               color: _isFlashOn ? Colors.yellow : Colors.grey,
             ),
+            tooltip: localizations.toggleFlash,
             onPressed: () {
               setState(() {
                 _isFlashOn = !_isFlashOn;
@@ -43,6 +87,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
             icon: Icon(
               _isFrontCamera ? Icons.camera_front : Icons.camera_rear,
             ),
+            tooltip: localizations.switchCamera,
             onPressed: () {
               setState(() {
                 _isFrontCamera = !_isFrontCamera;
@@ -62,11 +107,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                 if (barcodes.isNotEmpty && _isScanning) {
                   final String code = barcodes.first.rawValue ?? '';
                   if (code.isNotEmpty) {
-                    setState(() {
-                      _isScanning = false;
-                    });
-                    // 스캔 결과를 이전 화면으로 전달
-                    Navigator.pop(context, code);
+                    _handleScan(code);
                   }
                 }
               },
@@ -76,9 +117,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
             width: double.infinity,
             color: Colors.black54,
             padding: const EdgeInsets.all(16),
-            child: const Text(
-              '바코드나 QR 코드를 스캔하세요',
-              style: TextStyle(
+            child: Text(
+              widget.hintText ?? localizations.scanInstructions,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
               ),

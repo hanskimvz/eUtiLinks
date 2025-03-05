@@ -3,16 +3,18 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/models/device_model.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/utils/scanner_utils.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 // 카메라 및 QR 코드 스캔을 위한 패키지 import 예시
 // import 'package:image_picker/image_picker.dart';
 // import 'package:qr_code_scanner/qr_code_scanner.dart';
 // import 'package:permission_handler/permission_handler.dart';
 // 카메라 및 권한 관리를 위한 패키지 import
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import './qr_scanner_page.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:permission_handler/permission_handler.dart';
+// import 'package:mobile_scanner/mobile_scanner.dart';
+// import './qr_scanner_page.dart';
+// import 'package:app_settings/app_settings.dart';
 
 class InstallerDeviceInfoPage extends StatefulWidget {
   final String deviceUid;
@@ -214,56 +216,33 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
     }
   }
   
+
   Future<void> _openCamera() async {
     final localizations = AppLocalizations.of(context)!;
     
-    try {
-      // 카메라 권한 요청
-      var status = await Permission.camera.request();
-      if (status.isGranted) {
-        // QR 코드/바코드 스캐너 페이지로 이동
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const QRScannerPage(),
-          ),
-        );
+    // ScannerUtils 클래스를 사용하여 QR 코드 스캔
+    final result = await ScannerUtils.scanQRCode(
+      context: context,
+      hintText: localizations.meterId,
+      onSuccess: (code) {
+        setState(() {
+          _meterIdController.text = code;
+        });
         
-        // 스캔 결과가 있으면 미터기 ID 설정
-        if (result != null && result is String) {
-          setState(() {
-            _meterIdController.text = result;
-          });
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('코드 스캔 완료: $result'),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      } else if (status.isPermanentlyDenied) {
-        // 권한이 영구적으로 거부된 경우 설정으로 이동하도록 안내
+        // 다국어 지원 - scanCompleted 메서드 직접 호출
+        final message = localizations.scanCompleted(code);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('카메라 권한이 거부되었습니다. 설정에서 권한을 허용해주세요.'),
-            action: SnackBarAction(
-              label: '설정',
-              onPressed: () => openAppSettings(),
-            ),
-            duration: const Duration(seconds: 5),
+            content: Text(message),
+            duration: const Duration(seconds: 3),
           ),
         );
-      } else {
-        // 권한이 거부된 경우
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('카메라 권한이 필요합니다.')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('카메라 오류: $e')),
-      );
+      },
+    );
+    
+    // 결과가 있고 onSuccess 콜백이 호출되지 않은 경우 여기서 처리
+    if (result != null && mounted) {
+      // 이미 onSuccess에서 처리했으므로 여기서는 추가 작업 불필요
     }
   }
   
