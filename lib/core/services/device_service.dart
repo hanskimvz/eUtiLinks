@@ -117,20 +117,28 @@ class DeviceService {
       final dbName = prefs.getString('_db_name') ?? '';
       final loginId = prefs.getString('_login_id') ?? '';
       final role = prefs.getString('_role') ?? '';
+      final userSeq = prefs.getString('_userseq') ?? '';
+
+      
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/device/update'),
+        Uri.parse('$baseUrl/api/update'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          'page': 'device_info',
+          'format': 'json',
           'device_uid': device.deviceUid,
           'customer_name': device.customerName,
           'customer_no': device.customerNo,
           'meter_id': device.meterId,
+          // 'initial_count': device.initialCount,
+          'ref_interval': device.refInterval,
           'db_name': dbName,
           'user_id': loginId,
           'role': role,
+          'userseq': userSeq,
         }),
       );
 
@@ -293,6 +301,117 @@ class DeviceService {
       }
     } catch (e) {
       throw Exception('단말기 정보 조회 실패: $e');
+    }
+  }
+
+  Future<bool> updateDeviceInstallation(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dbName = prefs.getString('_db_name') ?? '';
+      final loginId = prefs.getString('_login_id') ?? '';
+      final role = prefs.getString('_role') ?? '';
+      final userSeq = prefs.getString('_userseq') ?? '';
+
+      final Map<String, dynamic> requestBody = {
+        'page': 'device_info',
+        'format': 'json',
+        'db_name': dbName,
+        'user_id': loginId,
+        'role': role,
+        'userseq': userSeq,
+        ...data,
+      };
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/update'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['code'] == 200) {
+          return true;
+        } else {
+          throw Exception('API 응답 오류: ${jsonResponse['message']}');
+        }
+      } else {
+        throw Exception('서버 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('설치 정보 업데이트 실패: $e');
+    }
+  }
+
+  Future<DeviceModel?> getDeviceByMeterId(String meterId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dbName = prefs.getString('_db_name') ?? '';
+      final loginId = prefs.getString('_login_id') ?? '';
+      final role = prefs.getString('_role') ?? '';
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/query'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'page': 'device_info',
+          'format': 'json',
+          'fields': [
+            'device_uid',
+            'last_count',
+            'last_access',
+            'flag',
+            'uptime',
+            'initial_access',
+            'ref_interval',
+            'minimum',
+            'maximum',
+            'battery',
+            'customer_name',
+            'customer_no',
+            'addr_prov',
+            'addr_city',
+            'addr_dist',
+            'addr_detail',
+            'share_house',
+            'addr_apt',
+            'category',
+            'subscriber_no',
+            'meter_id',
+            'class',
+            'in_outdoor',
+            'release_date',
+            'installer_id'
+          ],
+          'filter': {
+            'meter_id': meterId
+          },
+          'db_name': dbName,
+          'user_id': loginId,
+          'role': role,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['code'] == 200) {
+          final List<dynamic> devicesJson = jsonResponse['data'];
+          if (devicesJson.isNotEmpty) {
+            return DeviceModel.fromJson(devicesJson.first);
+          }
+          return null;
+        } else {
+          throw Exception('API 응답 오류: ${jsonResponse['message']}');
+        }
+      } else {
+        throw Exception('서버 오류: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('미터기 ID로 장치 정보 조회 실패: $e');
     }
   }
 } 

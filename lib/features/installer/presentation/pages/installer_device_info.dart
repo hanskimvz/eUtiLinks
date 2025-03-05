@@ -5,16 +5,7 @@ import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/scanner_utils.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
-// 카메라 및 QR 코드 스캔을 위한 패키지 import 예시
-// import 'package:image_picker/image_picker.dart';
-// import 'package:qr_code_scanner/qr_code_scanner.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// 카메라 및 권한 관리를 위한 패키지 import
-// import 'package:image_picker/image_picker.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// import 'package:mobile_scanner/mobile_scanner.dart';
-// import './qr_scanner_page.dart';
-// import 'package:app_settings/app_settings.dart';
+
 
 class InstallerDeviceInfoPage extends StatefulWidget {
   final String deviceUid;
@@ -40,6 +31,13 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
   bool _isActive = true;
   int _selectedInterval = 3600; // 기본값: 1시간
   
+  // 가입자 정보 변수 추가
+  String? _customerName;
+  String? _customerNo;
+  String? _subscriberNo;
+  String? _address;
+  bool _isLoadingCustomer = false;
+  
   @override
   void initState() {
     super.initState();
@@ -48,14 +46,78 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
     );
     _loadDeviceInfo();
     _installDate = DateTime.now();
+    
+    // 미터기 ID 컨트롤러에 리스너 추가
+    _meterIdController.addListener(_onMeterIdChanged);
   }
   
   @override
   void dispose() {
     _commentController.dispose();
     _initialValueController.dispose();
+    _meterIdController.removeListener(_onMeterIdChanged);
     _meterIdController.dispose();
     super.dispose();
+  }
+  
+  // 미터기 ID 변경 감지 리스너
+  void _onMeterIdChanged() {
+    // 디바운스 처리를 위한 타이머 추가 가능
+    // 여기서는 간단하게 구현
+  }
+  
+  // 미터기 ID로 가입자 정보 조회
+  Future<void> _fetchCustomerInfo(String meterId) async {
+    if (meterId.isEmpty) {
+      setState(() {
+        _customerName = null;
+        _customerNo = null;
+        _subscriberNo = null;
+        _address = null;
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoadingCustomer = true;
+    });
+    
+    try {
+      final deviceInfo = await _deviceService.getDeviceByMeterId(meterId);
+      
+      setState(() {
+        if (deviceInfo != null) {
+          _customerName = deviceInfo.customerName;
+          _customerNo = deviceInfo.customerNo;
+          _subscriberNo = deviceInfo.subscriberNo;
+          
+          // 주소 조합
+          final addressParts = [
+            deviceInfo.addrProv,
+            deviceInfo.addrCity,
+            deviceInfo.addrDist,
+            deviceInfo.addrDong,
+            deviceInfo.addrDetail
+          ].where((part) => part != null && part.isNotEmpty).toList();
+          
+          _address = addressParts.isNotEmpty ? addressParts.join(' ') : null;
+        } else {
+          _customerName = null;
+          _customerNo = null;
+          _subscriberNo = null;
+          _address = null;
+        }
+        _isLoadingCustomer = false;
+      });
+    } catch (e) {
+      setState(() {
+        _customerName = null;
+        _customerNo = null;
+        _subscriberNo = null;
+        _address = null;
+        _isLoadingCustomer = false;
+      });
+    }
   }
   
   Future<void> _loadDeviceInfo() async {
@@ -172,19 +234,19 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
         'install_date': _installDate != null 
             ? '${_installDate!.year}-${_installDate!.month.toString().padLeft(2, '0')}-${_installDate!.day.toString().padLeft(2, '0')}'
             : null,
-        'initial_value': _initialValueController.text.isNotEmpty 
+        'initial_count': _initialValueController.text.isNotEmpty 
             ? double.tryParse(_initialValueController.text) ?? 0.0
             : 0.0,
-        'ref_interval': _selectedInterval ~/ 60, // 초 단위를 분 단위로 변환
+        'ref_interval': _selectedInterval, // 초 단위
         'flag': _isActive ? 'active' : 'inactive',
         'comment': _commentController.text,
       };
       
       // 여기에 설치 완료 API 호출 로직 추가
-      // 예: await _deviceService.updateDeviceInstallation(updateData);
+      await _deviceService.updateDeviceInstallation(updateData);
       
       // 디버그용 로그 출력
-      print('설치 정보 업데이트: $updateData');
+      // print('설치 정보 업데이트: $updateData');
       
       // 임시로 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
@@ -237,6 +299,11 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
             duration: const Duration(seconds: 3),
           ),
         );
+        
+        // 스캔 후 가입자 정보 조회
+        if (code.isNotEmpty) {
+          _fetchCustomerInfo(code);
+        }
       },
     );
     
@@ -252,13 +319,18 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
     
     // 데이터 전송주기 옵션
     final List<Map<String, dynamic>> intervalOptions = [
-      { 'value': 3600, 'text': '1시간' },
-      { 'value': 7200, 'text': '2시간' },
-      { 'value': 10800, 'text': '3시간' },
-      { 'value': 21600, 'text': '6시간' },
-      { 'value': 43200, 'text': '12시간' },
-      { 'value': 86400, 'text': '1일' },
+      { 'value': 3600, 'text': localizations.r1hour },
+      { 'value': 7200, 'text': localizations.r2hours },
+      { 'value': 10800, 'text': localizations.r3hours },
+      { 'value': 21600, 'text': localizations.r6hours },
+      { 'value': 43200, 'text': localizations.r12hours },
+      { 'value': 86400, 'text': localizations.r1day },
     ];
+    
+    // _selectedInterval 값이 intervalOptions에 없는 경우 기본값(3600)으로 설정
+    if (!intervalOptions.any((option) => option['value'] == _selectedInterval)) {
+      _selectedInterval = 43200; // 기본값: 12시간
+    }
     
     return MainLayout(
       title: localizations.deviceInfo,
@@ -324,6 +396,11 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
                                               border: OutlineInputBorder(),
                                               contentPadding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                                             ),
+                                            onChanged: (value) {
+                                              if (value.isNotEmpty && value.length > 3) {
+                                                _fetchCustomerInfo(value);
+                                              }
+                                            },
                                           ),
                                         ),
                                         const SizedBox(width: 8),
@@ -339,6 +416,121 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
                                       ],
                                     ),
                                   ),
+                                  
+                                  // 가입자 정보 표시 영역
+                                  if (_isLoadingCustomer)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                    )
+                                  else if (_customerName != null || _customerNo != null || _subscriberNo != null || _address != null)
+                                    Card(
+                                      color: Colors.blue.shade50,
+                                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              localizations.customerInfo,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            if (_customerName != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 4.0),
+                                                child: Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 100,
+                                                      child: Text(
+                                                        localizations.customerName,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(_customerName!),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (_customerNo != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 4.0),
+                                                child: Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 100,
+                                                      child: Text(
+                                                        localizations.customerNo,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(_customerNo!),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (_subscriberNo != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 4.0),
+                                                child: Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 100,
+                                                      child: Text(
+                                                        localizations.subscriberNo,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(_subscriberNo!),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            if (_address != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(bottom: 4.0),
+                                                child: Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 100,
+                                                      child: Text(
+                                                        localizations.address,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(_address!),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   
                                   _buildInfoRow(localizations.releaseDate, _device!.releaseDate ?? '-'),
                                   
