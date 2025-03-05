@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
     if (kIsWeb) {
       // 웹에서는 화면 크기로 판단
       final windowWidth = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
-      final windowHeight = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.height;
+      // final windowHeight = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.height;
       final devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
       
       final logicalWidth = windowWidth / devicePixelRatio;

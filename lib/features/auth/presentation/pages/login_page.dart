@@ -177,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
           });
         }
       } catch (e) {
-        print('응답 파싱 오류: $e');
+        // print('응답 파싱 오류: $e');
         setState(() {
           _errorMessage = '서버 응답을 처리할 수 없습니다.';
           _isLoading = false;
