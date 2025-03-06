@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/menu_constants.dart';
-import '../../../../core/constants/auth_service.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 import 'device_query_page.dart';
 import 'received_data_query_page.dart';
 import 'usage_query_page.dart';
 import 'anomaly_query_page.dart';
+import 'db_viewer_page.dart';
 
 class InfoManagementPage extends StatefulWidget {
   const InfoManagementPage({super.key});
@@ -21,27 +22,30 @@ class _InfoManagementPageState extends State<InfoManagementPage> {
 
   Future<void> _logout() async {
     final localizations = AppLocalizations.of(context)!;
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.logoutTitle),
-        content: Text(localizations.logoutConfirmation),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(localizations.logout),
-          ),
-        ],
-      ),
-    ) ?? false;
-    
+    final shouldLogout =
+        await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text(localizations.logoutTitle),
+                content: Text(localizations.logoutConfirmation),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(localizations.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(localizations.logout),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
+
     if (shouldLogout) {
       await AuthService.logout();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -76,8 +80,10 @@ class _InfoManagementPageState extends State<InfoManagementPage> {
         return const UsageQueryPage();
       case 3:
         return const AnomalyQueryPage();
+      case 4:
+        return const DbViewerPage();
       default:
         return const DeviceQueryPage();
     }
   }
-} 
+}

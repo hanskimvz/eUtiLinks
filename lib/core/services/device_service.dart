@@ -1,27 +1,32 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
 import '../models/device_model.dart';
+import 'auth_service.dart';
 
 class DeviceService {
   final String baseUrl;
 
-  DeviceService({
-    required this.baseUrl,
-  });
+  DeviceService({required this.baseUrl}) {
+    _initService();
+  }
+
+  Future<void> _initService() async {
+    await AuthService.initAuthData();
+  }
+
+  Map<String, String> get authData => AuthService.authData;
 
   Future<List<DeviceModel>> getDevices() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/query'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'page': 'device_info',
           'format': 'json',
@@ -48,11 +53,9 @@ class DeviceService {
             'subscriber_no',
             'meter_id',
             'class',
-            'in_outdoor'
+            'in_outdoor',
           ],
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
+          ...authData,
         }),
       );
 
@@ -74,25 +77,21 @@ class DeviceService {
 
   Future<DeviceModel> addDevice(DeviceModel device) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/device/add'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'device_uid': device.deviceUid,
           'customer_name': device.customerName,
           'customer_no': device.customerNo,
           'meter_id': device.meterId,
           'flag': device.flag,
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
+          ...authData,
         }),
       );
 
@@ -113,19 +112,14 @@ class DeviceService {
 
   Future<DeviceModel> updateDevice(DeviceModel device) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
-      final userSeq = prefs.getString('_userseq') ?? '';
-
-      
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/update'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'page': 'device_info',
           'format': 'json',
@@ -135,10 +129,7 @@ class DeviceService {
           'meter_id': device.meterId,
           // 'initial_count': device.initialCount,
           'ref_interval': device.refInterval,
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
-          'userseq': userSeq,
+          ...authData,
         }),
       );
 
@@ -159,22 +150,15 @@ class DeviceService {
 
   Future<bool> deleteDevice(String deviceUid) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/device/delete'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'device_uid': deviceUid,
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'device_uid': deviceUid, ...authData}),
       );
 
       if (response.statusCode == 200) {
@@ -193,25 +177,21 @@ class DeviceService {
   }
 
   Future<DeviceModel> getDeviceInfo(String deviceUid) async {
-
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/api/query'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'page': 'device_info',
           'device_uid': deviceUid,
           'format': 'json',
           'fields': [],
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
+          ...authData,
         }),
       );
 
@@ -232,47 +212,47 @@ class DeviceService {
   Future<List<DeviceModel>> getDevicesWithFilter({
     String page = 'device_info',
     List<String>? fields,
-    Map<String, dynamic>? filter
+    Map<String, dynamic>? filter,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final Map<String, dynamic> requestBody = {
         'page': page,
         'format': 'json',
-        'fields': fields ?? [
-          'device_uid',
-          'last_count',
-          'last_access',
-          'flag',
-          'uptime',
-          'initial_access',
-          'ref_interval',
-          'minimum',
-          'maximum',
-          'battery',
-          'customer_name',
-          'customer_no',
-          'addr_prov',
-          'addr_city',
-          'addr_dist',
-          'addr_detail',
-          'share_house',
-          'addr_apt',
-          'category',
-          'subscriber_no',
-          'meter_id',
-          'class',
-          'in_outdoor',
-          'release_date',
-          'installer_id'
-        ],
-        'db_name': dbName,
-        'user_id': loginId,
-        'role': role,
+        'fields':
+            fields ??
+            [
+              'device_uid',
+              'last_count',
+              'last_access',
+              'flag',
+              'uptime',
+              'initial_access',
+              'ref_interval',
+              'minimum',
+              'maximum',
+              'battery',
+              'customer_name',
+              'customer_no',
+              'addr_prov',
+              'addr_city',
+              'addr_dist',
+              'addr_detail',
+              'share_house',
+              'addr_apt',
+              'category',
+              'subscriber_no',
+              'meter_id',
+              'class',
+              'in_outdoor',
+              'release_date',
+              'installer_id',
+            ],
+        ...authData,
       };
 
       // 필터가 있으면 추가
@@ -282,9 +262,7 @@ class DeviceService {
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/query'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
 
@@ -306,27 +284,21 @@ class DeviceService {
 
   Future<bool> updateDeviceInstallation(Map<String, dynamic> data) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
-      final userSeq = prefs.getString('_userseq') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final Map<String, dynamic> requestBody = {
-        'page': 'device_info',
+        'page': 'install_device_info',
         'format': 'json',
-        'db_name': dbName,
-        'user_id': loginId,
-        'role': role,
-        'userseq': userSeq,
+        ...authData,
         ...data,
       };
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/update'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
 
@@ -347,16 +319,14 @@ class DeviceService {
 
   Future<DeviceModel?> getDeviceByMeterId(String meterId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final dbName = prefs.getString('_db_name') ?? '';
-      final loginId = prefs.getString('_login_id') ?? '';
-      final role = prefs.getString('_role') ?? '';
+      // 인증 데이터가 비어있으면 초기화
+      if (authData.isEmpty) {
+        await AuthService.initAuthData();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/api/query'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'page': 'device_info',
           'format': 'json',
@@ -385,14 +355,10 @@ class DeviceService {
             'class',
             'in_outdoor',
             'release_date',
-            'installer_id'
+            'installer_id',
           ],
-          'filter': {
-            'meter_id': meterId
-          },
-          'db_name': dbName,
-          'user_id': loginId,
-          'role': role,
+          'filter': {'meter_id': meterId},
+          ...authData,
         }),
       );
 
@@ -414,4 +380,9 @@ class DeviceService {
       throw Exception('미터기 ID로 장치 정보 조회 실패: $e');
     }
   }
-} 
+
+  // 인증 데이터 갱신 메서드
+  Future<void> refreshAuthData() async {
+    await AuthService.initAuthData();
+  }
+}

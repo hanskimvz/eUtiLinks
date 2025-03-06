@@ -10,7 +10,7 @@ class YearlyStatisticsPage extends StatefulWidget {
 
 class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
   int _selectedYear = DateTime.now().year;
-  
+
   final List<Map<String, dynamic>> _yearlyData = [
     {
       'year': DateTime.now().year,
@@ -21,8 +21,18 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
       'activeDevices': 100,
       'anomalies': 145,
       'monthlyUsage': [
-        42000.5, 45525.3, 40200.8, 38500.2, 35800.6, 32500.4,
-        30200.3, 31500.7, 33800.9, 36500.2, 38500.6, 42500.0
+        42000.5,
+        45525.3,
+        40200.8,
+        38500.2,
+        35800.6,
+        32500.4,
+        30200.3,
+        31500.7,
+        33800.9,
+        36500.2,
+        38500.6,
+        42500.0,
       ],
     },
     {
@@ -34,8 +44,18 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
       'activeDevices': 95,
       'anomalies': 132,
       'monthlyUsage': [
-        40500.2, 42800.5, 39200.3, 37500.8, 34800.2, 31500.6,
-        29200.4, 30500.3, 32800.7, 35500.9, 37500.3, 43818.6
+        40500.2,
+        42800.5,
+        39200.3,
+        37500.8,
+        34800.2,
+        31500.6,
+        29200.4,
+        30500.3,
+        32800.7,
+        35500.9,
+        37500.3,
+        43818.6,
       ],
     },
     {
@@ -47,8 +67,18 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
       'activeDevices': 90,
       'anomalies': 120,
       'monthlyUsage': [
-        40000.3, 42532.4, 38200.5, 36500.7, 33800.9, 30500.2,
-        28200.6, 29500.4, 31800.3, 34500.8, 36500.7, 42200.0
+        40000.3,
+        42532.4,
+        38200.5,
+        36500.7,
+        33800.9,
+        30500.2,
+        28200.6,
+        29500.4,
+        31800.3,
+        34500.8,
+        36500.7,
+        42200.0,
       ],
     },
   ];
@@ -64,60 +94,65 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '연간 현황',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '연간 현황',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // 년도 선택기
-          Row(
-            children: [
-              const Text('년도 선택: ', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              DropdownButton<int>(
-                value: _selectedYear,
-                items: List.generate(5, (index) => DateTime.now().year - index)
-                    .map((year) => DropdownMenuItem<int>(
-                          value: year,
-                          child: Text('$year년'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedYear = value;
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          // 통계 카드
-          if (_selectedYearData != null) ...[
-            _buildStatisticsCards(),
-            const SizedBox(height: 24),
-            _buildMonthlyUsageChart(),
-            const SizedBox(height: 24),
-            _buildYearlyComparisonChart(),
-          ] else
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Text('선택한 연도의 데이터가 없습니다.'),
-              ),
+            const SizedBox(height: 16),
+
+            // 년도 선택기
+            Row(
+              children: [
+                const Text(
+                  '년도 선택: ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<int>(
+                  value: _selectedYear,
+                  items:
+                      List.generate(5, (index) => DateTime.now().year - index)
+                          .map(
+                            (year) => DropdownMenuItem<int>(
+                              value: year,
+                              child: Text('$year년'),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedYear = value;
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
-        ],
+            const SizedBox(height: 24),
+
+            // 통계 카드
+            if (_selectedYearData != null) ...[
+              _buildStatisticsCards(),
+              const SizedBox(height: 24),
+              _buildMonthlyUsageChart(),
+              const SizedBox(height: 24),
+              _buildYearlyComparisonChart(),
+            ] else
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text('선택한 연도의 데이터가 없습니다.'),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -125,7 +160,7 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
   Widget _buildStatisticsCards() {
     final data = _selectedYearData!;
     final numberFormat = NumberFormat('#,###');
-    
+
     return GridView.count(
       crossAxisCount: 3,
       childAspectRatio: 2.5,
@@ -134,11 +169,27 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
       children: [
-        _buildStatCard('총 사용량', '${numberFormat.format(data['totalUsage'])} m³', Colors.blue[100]!),
-        _buildStatCard('월평균 사용량', '${numberFormat.format(data['averageMonthlyUsage'])} m³', Colors.green[100]!),
+        _buildStatCard(
+          '총 사용량',
+          '${numberFormat.format(data['totalUsage'])} m³',
+          Colors.blue[100]!,
+        ),
+        _buildStatCard(
+          '월평균 사용량',
+          '${numberFormat.format(data['averageMonthlyUsage'])} m³',
+          Colors.green[100]!,
+        ),
         _buildStatCard('피크 월', '${data['peakMonth']}월', Colors.orange[100]!),
-        _buildStatCard('피크 사용량', '${numberFormat.format(data['peakUsage'])} m³', Colors.red[100]!),
-        _buildStatCard('활성 단말기', '${data['activeDevices']}대', Colors.purple[100]!),
+        _buildStatCard(
+          '피크 사용량',
+          '${numberFormat.format(data['peakUsage'])} m³',
+          Colors.red[100]!,
+        ),
+        _buildStatCard(
+          '활성 단말기',
+          '${data['activeDevices']}대',
+          Colors.purple[100]!,
+        ),
         _buildStatCard('이상 발생', '${data['anomalies']}건', Colors.amber[100]!),
       ],
     );
@@ -156,18 +207,12 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -178,18 +223,30 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
   Widget _buildMonthlyUsageChart() {
     final data = _selectedYearData!;
     final monthlyUsage = data['monthlyUsage'] as List<dynamic>;
-    final maxUsage = monthlyUsage.reduce((a, b) => a > b ? a : b);
-    final months = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-    
+    final maxUsage = monthlyUsage
+        .map((value) => value as double)
+        .reduce((a, b) => a > b ? a : b);
+    final months = [
+      '1월',
+      '2월',
+      '3월',
+      '4월',
+      '5월',
+      '6월',
+      '7월',
+      '8월',
+      '9월',
+      '10월',
+      '11월',
+      '12월',
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           '월별 사용량',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -204,7 +261,7 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
             children: List.generate(12, (index) {
               final height = (monthlyUsage[index] / maxUsage) * 180;
               final numberFormat = NumberFormat('#,###');
-              
+
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -213,15 +270,13 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
                     children: [
                       Container(
                         height: height,
-                        color: index == data['peakMonth'] - 1 
-                            ? Colors.red 
-                            : Colors.blue,
+                        color:
+                            index == data['peakMonth'] - 1
+                                ? Colors.red
+                                : Colors.blue,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        months[index],
-                        style: const TextStyle(fontSize: 10),
-                      ),
+                      Text(months[index], style: const TextStyle(fontSize: 10)),
                       const SizedBox(height: 2),
                       Text(
                         numberFormat.format(monthlyUsage[index]),
@@ -240,16 +295,13 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
 
   Widget _buildYearlyComparisonChart() {
     final numberFormat = NumberFormat('#,###');
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           '최근 3년 사용량 비교',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -262,38 +314,40 @@ class _YearlyStatisticsPageState extends State<YearlyStatisticsPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: _yearlyData.map((data) {
-              final height = (data['totalUsage'] / 500000) * 150;
-              
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    width: 80,
-                    height: height,
-                    color: data['year'] == _selectedYear
-                        ? Colors.blue
-                        : Colors.blue[200],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${data['year']}년',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${numberFormat.format(data['totalUsage'])} m³',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+            children:
+                _yearlyData.map((data) {
+                  final height = (data['totalUsage'] / 500000) * 150;
+
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: height,
+                        color:
+                            data['year'] == _selectedYear
+                                ? Colors.blue
+                                : Colors.blue[200],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${data['year']}년',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${numberFormat.format(data['totalUsage'])} m³',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
           ),
         ),
       ],
     );
   }
-} 
+}

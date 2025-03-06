@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../../core/constants/menu_constants.dart';
-import '../../../../core/constants/auth_service.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 import 'system_settings_page.dart';
@@ -24,27 +24,30 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _logout() async {
     final localizations = AppLocalizations.of(context)!;
     // 로그아웃 확인 다이얼로그 표시
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.logoutTitle),
-        content: Text(localizations.logoutConfirmation),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(localizations.logout),
-          ),
-        ],
-      ),
-    ) ?? false;
-    
+    final shouldLogout =
+        await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text(localizations.logoutTitle),
+                content: Text(localizations.logoutConfirmation),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(localizations.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(localizations.logout),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
+
     if (shouldLogout) {
       await AuthService.logout();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -56,7 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     // final localizations = AppLocalizations.of(context);
-    
+
     return MainLayout(
       title: MenuConstants.settings,
       selectedMainMenuIndex: 2,
@@ -99,26 +102,16 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.construction,
-            size: 80,
-            color: Colors.grey,
-          ),
+          const Icon(Icons.construction, size: 80, color: Colors.grey),
           const SizedBox(height: 24),
           Text(
             '$title 기능',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           const Text(
             '준비 중인 기능입니다. 곧 제공될 예정입니다.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
       ),

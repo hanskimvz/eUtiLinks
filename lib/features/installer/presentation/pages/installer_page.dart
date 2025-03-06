@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/menu_constants.dart';
-import '../../../../core/constants/auth_service.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/models/device_model.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -31,7 +31,7 @@ class _InstallerPageState extends State<InstallerPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   late final DeviceService _deviceService;
-  
+
   // 정렬 상태를 관리하기 위한 변수 추가
   int _sortColumnIndex = 0;
   bool _sortAscending = true;
@@ -39,23 +39,21 @@ class _InstallerPageState extends State<InstallerPage> {
   @override
   void initState() {
     super.initState();
-    _deviceService = DeviceService(
-      baseUrl: ApiConstants.serverUrl,
-    );
+    _deviceService = DeviceService(baseUrl: ApiConstants.serverUrl);
     _checkLoginStatus();
   }
 
   // 로그인 상태 확인 및 자동 로그인 처리
   Future<void> _checkLoginStatus() async {
     final currentUser = await AuthService.getCurrentUser();
-    
+
     if (currentUser == null) {
       // 모바일 기기에서 자동 로그인 시도
       if (Platform.isAndroid || Platform.isIOS) {
         final prefs = await SharedPreferences.getInstance();
         final savedId = prefs.getString('saved_id');
         final savedPassword = prefs.getString('saved_password');
-        
+
         if (savedId != null && savedPassword != null) {
           try {
             await AuthService.login(savedId, savedPassword);
@@ -116,12 +114,12 @@ class _InstallerPageState extends State<InstallerPage> {
       }
 
       final loginId = currentUser['id'];
-      
+
       // installer_id 필터를 적용하여 장치 목록 가져오기
       final devices = await _deviceService.getDevicesWithFilter(
         filter: {'installer_id': loginId},
       );
-      
+
       setState(() {
         _devices = devices;
         _filteredDevices = devices;
@@ -140,16 +138,19 @@ class _InstallerPageState extends State<InstallerPage> {
       if (query.isEmpty) {
         _filteredDevices = _devices;
       } else {
-        _filteredDevices = _devices.where((device) {
-          final searchFields = [
-            device.deviceUid,
-            device.meterId ?? '',
-            device.releaseDate ?? '',
-            device.flag ?? '',
-          ].map((s) => s.toLowerCase());
-          
-          return searchFields.any((field) => field.contains(query.toLowerCase()));
-        }).toList();
+        _filteredDevices =
+            _devices.where((device) {
+              final searchFields = [
+                device.deviceUid,
+                device.meterId ?? '',
+                device.releaseDate ?? '',
+                device.flag ?? '',
+              ].map((s) => s.toLowerCase());
+
+              return searchFields.any(
+                (field) => field.contains(query.toLowerCase()),
+              );
+            }).toList();
       }
     });
   }
@@ -165,11 +166,11 @@ class _InstallerPageState extends State<InstallerPage> {
 
   String _getStatusText(String? flag) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     if (flag == null || flag.isEmpty) {
       return localizations.statusUnknown;
     }
-    
+
     switch (flag.toLowerCase()) {
       case 'active':
       case 'normal':
@@ -185,16 +186,20 @@ class _InstallerPageState extends State<InstallerPage> {
     }
   }
 
-  void _sort<T>(Comparable<T> Function(DeviceModel device) getField, int columnIndex, bool ascending) {
+  void _sort<T>(
+    Comparable<T> Function(DeviceModel device) getField,
+    int columnIndex,
+    bool ascending,
+  ) {
     _filteredDevices.sort((a, b) {
       final aValue = getField(a);
       final bValue = getField(b);
-      
+
       return ascending
           ? Comparable.compare(aValue, bValue)
           : Comparable.compare(bValue, aValue);
     });
-    
+
     setState(() {
       _sortColumnIndex = columnIndex;
       _sortAscending = ascending;
@@ -204,27 +209,30 @@ class _InstallerPageState extends State<InstallerPage> {
   Future<void> _logout() async {
     final localizations = AppLocalizations.of(context)!;
     // 로그아웃 확인 다이얼로그 표시
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.logoutTitle),
-        content: Text(localizations.logoutConfirmation),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(localizations.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(localizations.logout),
-          ),
-        ],
-      ),
-    ) ?? false;
-    
+    final shouldLogout =
+        await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text(localizations.logoutTitle),
+                content: Text(localizations.logoutConfirmation),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(localizations.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(localizations.logout),
+                  ),
+                ],
+              ),
+        ) ??
+        false;
+
     if (shouldLogout) {
       await AuthService.logout();
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -235,7 +243,7 @@ class _InstallerPageState extends State<InstallerPage> {
 
   Future<void> _openCamera() async {
     final localizations = AppLocalizations.of(context)!;
-    
+
     // ScannerUtils 클래스를 사용하여 QR 코드 스캔
     final result = await ScannerUtils.scanQRCode(
       context: context,
@@ -244,10 +252,10 @@ class _InstallerPageState extends State<InstallerPage> {
         setState(() {
           _searchController.text = code;
         });
-        
+
         // 검색 필터링 실행
         _filterDevices(code);
-        
+
         // 다국어 지원 - scanCompleted 메서드 직접 호출
         final message = localizations.scanCompleted(code);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -258,7 +266,7 @@ class _InstallerPageState extends State<InstallerPage> {
         );
       },
     );
-    
+
     // 결과가 있고 onSuccess 콜백이 호출되지 않은 경우 여기서 처리
     if (result != null && mounted) {
       // 이미 onSuccess에서 처리했으므로 여기서는 추가 작업 불필요
@@ -268,7 +276,7 @@ class _InstallerPageState extends State<InstallerPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     return MainLayout(
       title: MenuConstants.getInstaller(context),
       selectedMainMenuIndex: 3,
@@ -297,7 +305,7 @@ class _InstallerPageState extends State<InstallerPage> {
             //   ),
             // ),
             // const SizedBox(height: 24),
-            
+
             // 검색 영역
             Row(
               children: [
@@ -329,114 +337,159 @@ class _InstallerPageState extends State<InstallerPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 데이터 테이블
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage.isNotEmpty
-                      ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorMessage.isNotEmpty
+                      ? Center(
+                        child: Text(
+                          _errorMessage,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      )
                       : Card(
-                          child: Theme(
-                            data: Theme.of(context).copyWith(
-                              dataTableTheme: DataTableThemeData(
-                                headingTextStyle: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            dataTableTheme: DataTableThemeData(
+                              headingTextStyle: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                              dataTextStyle: const TextStyle(
+                                color: Colors.black87,
+                              ),
+                              headingRowColor: WidgetStateProperty.all(
+                                Colors.grey[100],
+                              ),
+                              dataRowColor: WidgetStateProperty.resolveWith<
+                                Color?
+                              >((Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Theme.of(
+                                    context,
+                                  ).colorScheme.primary.withValues(
+                                    red:
+                                        Theme.of(context).colorScheme.primary.r,
+                                    green:
+                                        Theme.of(context).colorScheme.primary.g,
+                                    blue:
+                                        Theme.of(context).colorScheme.primary.b,
+                                    alpha: 0.08 * 255,
+                                  );
+                                }
+                                if (states.contains(WidgetState.hovered)) {
+                                  return Colors.grey.withValues(
+                                    red: Colors.grey.r,
+                                    green: Colors.grey.g,
+                                    blue: Colors.grey.b,
+                                    alpha: 0.1 * 255,
+                                  );
+                                }
+                                return null;
+                              }),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              // 헤더 부분 (고정)
+                              Container(
+                                color: Colors.grey[100],
+                                child: Row(
+                                  children: [
+                                    _buildHeaderCell(
+                                      localizations.deviceUid,
+                                      0,
+                                      flex: 2,
+                                    ),
+                                    _buildHeaderCell(
+                                      localizations.releaseDate,
+                                      1,
+                                      flex: 1,
+                                    ),
+                                    _buildHeaderCell(
+                                      localizations.meterId,
+                                      2,
+                                      flex: 2,
+                                    ),
+                                    _buildHeaderCell(
+                                      localizations.status,
+                                      3,
+                                      flex: 1,
+                                    ),
+                                  ],
                                 ),
-                                dataTextStyle: const TextStyle(
-                                  color: Colors.black87,
-                                ),
-                                headingRowColor: WidgetStateProperty.all(Colors.grey[100]),
-                                dataRowColor: WidgetStateProperty.resolveWith<Color?>(
-                                  (Set<WidgetState> states) {
-                                    if (states.contains(WidgetState.selected)) {
-                                      return Theme.of(context).colorScheme.primary.withValues(
-                                        red: Theme.of(context).colorScheme.primary.r,
-                                        green: Theme.of(context).colorScheme.primary.g,
-                                        blue: Theme.of(context).colorScheme.primary.b,
-                                        alpha: 0.08 * 255,
-                                      );
-                                    }
-                                    if (states.contains(WidgetState.hovered)) {
-                                      return Colors.grey.withValues(
-                                        red: Colors.grey.r,
-                                        green: Colors.grey.g,
-                                        blue: Colors.grey.b,
-                                        alpha: 0.1 * 255,
-                                      );
-                                    }
-                                    return null;
+                              ),
+                              // 데이터 부분 (스크롤 가능)
+                              Expanded(
+                                child: ListView.builder(
+                                  itemCount: _filteredDevices.length,
+                                  itemBuilder: (context, index) {
+                                    final device = _filteredDevices[index];
+                                    return InkWell(
+                                      onTap:
+                                          () => _navigateToDeviceInfo(
+                                            device.deviceUid,
+                                          ),
+                                      onHover: (isHovering) {
+                                        // hover 상태 변경 시 UI 업데이트
+                                        if (isHovering) {
+                                          setState(() {
+                                            // 필요한 경우 hover 상태 관리 로직 추가
+                                          });
+                                        }
+                                      },
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color:
+                                              index % 2 == 0
+                                                  ? Colors.white
+                                                  : Colors.grey[50],
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey[300]!,
+                                              width: 1,
+                                            ),
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            _buildDataCell(
+                                              device.deviceUid,
+                                              flex: 2,
+                                            ),
+                                            _buildDataCell(
+                                              device.releaseDate ?? '',
+                                              flex: 1,
+                                            ),
+                                            _buildDataCell(
+                                              device.meterId ?? '',
+                                              flex: 2,
+                                            ),
+                                            _buildDataCell(
+                                              _getStatusText(device.flag),
+                                              flex: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
                                   },
                                 ),
                               ),
-                            ),
-                            child: Column(
-                              children: [
-                                // 헤더 부분 (고정)
-                                Container(
-                                  color: Colors.grey[100],
-                                  child: Row(
-                                    children: [
-                                      _buildHeaderCell(localizations.deviceUid, 0, flex: 2),
-                                      _buildHeaderCell(localizations.releaseDate, 1, flex: 1),
-                                      _buildHeaderCell(localizations.meterId, 2, flex: 2),
-                                      _buildHeaderCell(localizations.status, 3, flex: 1),
-                                    ],
-                                  ),
-                                ),
-                                // 데이터 부분 (스크롤 가능)
-                                Expanded(
-                                  child: ListView.builder(
-                                    itemCount: _filteredDevices.length,
-                                    itemBuilder: (context, index) {
-                                      final device = _filteredDevices[index];
-                                      return InkWell(
-                                        onTap: () => _navigateToDeviceInfo(device.deviceUid),
-                                        onHover: (isHovering) {
-                                          // hover 상태 변경 시 UI 업데이트
-                                          if (isHovering) {
-                                            setState(() {
-                                              // 필요한 경우 hover 상태 관리 로직 추가
-                                            });
-                                          }
-                                        },
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: index % 2 == 0 
-                                                ? Colors.white 
-                                                : Colors.grey[50],
-                                            border: Border(
-                                              bottom: BorderSide(
-                                                color: Colors.grey[300]!,
-                                                width: 1,
-                                              ),
-                                            ),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              _buildDataCell(device.deviceUid, flex: 2),
-                                              _buildDataCell(device.releaseDate ?? '', flex: 1),
-                                              _buildDataCell(device.meterId ?? '', flex: 2),
-                                              _buildDataCell(_getStatusText(device.flag), flex: 1),
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
+                      ),
             ),
           ],
         ),
       ),
     );
   }
-  
+
   // 헤더 셀 위젯
   Widget _buildHeaderCell(String text, int columnIndex, {int flex = 1}) {
     return Expanded(
@@ -466,7 +519,12 @@ class _InstallerPageState extends State<InstallerPage> {
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Row(
             children: [
-              Expanded(child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold))),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
               if (_sortColumnIndex == columnIndex)
                 Icon(
                   _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
@@ -478,18 +536,15 @@ class _InstallerPageState extends State<InstallerPage> {
       ),
     );
   }
-  
+
   // 데이터 셀 위젯
   Widget _buildDataCell(String text, {int flex = 1}) {
     return Expanded(
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Text(
-          text,
-          overflow: TextOverflow.ellipsis,
-        ),
+        child: Text(text, overflow: TextOverflow.ellipsis),
       ),
     );
   }
-} 
+}

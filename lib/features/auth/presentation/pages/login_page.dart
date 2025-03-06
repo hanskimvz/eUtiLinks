@@ -10,7 +10,9 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 // API 상수 import
 import '../../../../core/constants/api_constants.dart';
-import '../../../../core/constants/auth_service.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/localization/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
   bool _isLoading = false;
   final Dio _dio = Dio();
-  
+
   // 서버 URL 설정 (ApiConstants에서 가져옴)
   late final String _serverUrl = ApiConstants.serverUrl;
 
@@ -38,15 +40,15 @@ class _LoginPageState extends State<LoginPage> {
     _loadSavedUsername();
     _checkLoginStatus();
   }
-  
+
   // 로그인 상태 확인
   Future<void> _checkLoginStatus() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     final isLoggedIn = await AuthService.isLoggedIn();
-    
+
     if (isLoggedIn && mounted) {
       // 이미 로그인되어 있으면 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 정보관리 페이지로 이동
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
@@ -73,18 +75,16 @@ class _LoginPageState extends State<LoginPage> {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-    
+
     // OPTIONS 메서드 문제 해결을 위한 설정
     _dio.options.validateStatus = (status) {
       return status != null && status < 500;
     };
-    
+
     // 로깅 인터셉터 추가
-    _dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      error: true,
-    ));
+    _dio.interceptors.add(
+      LogInterceptor(requestBody: true, responseBody: true, error: true),
+    );
   }
 
   Future<void> _loadSavedUsername() async {
@@ -134,11 +134,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-  
+
   // 로그인 시도 (웹과 모바일 모두 지원)
   Future<void> _tryLogin() async {
     final client = http.Client();
-    
+
     try {
       final response = await client.post(
         Uri.parse(ApiConstants.getApiUrl(ApiConstants.loginEndpoint)),
@@ -152,21 +152,21 @@ class _LoginPageState extends State<LoginPage> {
           'password': _passwordController.text,
         }),
       );
-      
+
       // print('응답 상태 코드: ${response.statusCode}');
       await _processResponse(response.statusCode, response.body);
     } finally {
       client.close();
     }
   }
-  
+
   // 응답 처리
   Future<void> _processResponse(int statusCode, String body) async {
     if (statusCode == 200) {
       try {
         final responseData = jsonDecode(body);
         // print('응답 데이터: $responseData');
-        
+
         if (responseData['code'] == 200) {
           await _processLoginSuccess(responseData);
           return;
@@ -195,7 +195,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
-  
+
   // 로그인 오류 처리
   void _handleLoginError(dynamic error) {
     // print('로그인 오류: $error');
@@ -203,17 +203,18 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = '서버에 연결할 수 없습니다. 네트워크 연결을 확인하세요.';
       _isLoading = false;
     });
-    
+
     // 개발 환경에서 테스트를 위한 로그인 처리
-    if (_usernameController.text == 'admin' && _passwordController.text == 'admin') {
+    if (_usernameController.text == 'admin' &&
+        _passwordController.text == 'admin') {
       _testLogin();
     }
   }
-  
+
   // 로그인 성공 처리를 위한 공통 메서드
   Future<void> _processLoginSuccess(dynamic responseData) async {
     final userData = responseData['data'];
-    
+
     // AuthService를 사용하여 사용자 정보 저장
     await AuthService.saveUserInfo(
       id: userData['ID'],
@@ -222,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
       name: userData['name'],
       userseq: userData['userseq'].toString(),
     );
-    
+
     // 사용자 이름 저장 (Remember me)
     final prefs = await SharedPreferences.getInstance();
     if (_rememberMe) {
@@ -230,7 +231,7 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       await prefs.remove('saved_username');
     }
-    
+
     if (mounted) {
       // 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 info_management 페이지로 이동
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
@@ -244,11 +245,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
   }
-  
+
   // 테스트용 로그인 처리 메서드
   Future<void> _testLogin() async {
     // print('테스트 로그인 시도 중...');
-    
+
     // AuthService를 사용하여 테스트 사용자 정보 저장
     await AuthService.saveUserInfo(
       id: 'admin',
@@ -257,7 +258,7 @@ class _LoginPageState extends State<LoginPage> {
       name: '관리자',
       userseq: '1',
     );
-    
+
     // 사용자 이름 저장 (Remember me)
     final prefs = await SharedPreferences.getInstance();
     if (_rememberMe) {
@@ -265,7 +266,7 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       await prefs.remove('saved_username');
     }
-    
+
     if (mounted) {
       // 모바일 기기인 경우 installer 페이지로, 그렇지 않은 경우 info_management 페이지로 이동
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
@@ -283,23 +284,25 @@ class _LoginPageState extends State<LoginPage> {
   void _resetPassword() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.forgotPasswordTitle),
-        content: Text(AppLocalizations.of(context)!.forgotPasswordMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.confirm),
+      builder:
+          (context) => AlertDialog(
+            title: Text(AppLocalizations.of(context)!.forgotPasswordTitle),
+            content: Text(AppLocalizations.of(context)!.forgotPasswordMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(AppLocalizations.of(context)!.confirm),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+    final localeProvider = Provider.of<LocaleProvider>(context);
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -325,7 +328,38 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 20),
+
+                        // 언어 선택 드롭다운
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          alignment: Alignment.centerRight,
+                          child: DropdownButton<Locale>(
+                            value: localeProvider.locale,
+                            underline: Container(
+                              height: 1,
+                              color: Colors.grey.shade400,
+                            ),
+                            onChanged: (Locale? newLocale) {
+                              if (newLocale != null) {
+                                localeProvider.setLocale(newLocale);
+                              }
+                            },
+                            items:
+                                LocaleProvider.supportedLocales.map((locale) {
+                                  return DropdownMenuItem<Locale>(
+                                    value: locale,
+                                    child: Text(
+                                      LocaleProvider.localeNames[locale
+                                              .languageCode] ??
+                                          locale.languageCode,
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
                         TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -397,14 +431,15 @@ class _LoginPageState extends State<LoginPage> {
                               backgroundColor: const Color(0xFF1E88E5),
                               foregroundColor: Colors.white,
                             ),
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : Text(
-                                    localizations.login,
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
+                            child:
+                                _isLoading
+                                    ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                    : Text(
+                                      localizations.login,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
                           ),
                         ),
                       ],
@@ -418,4 +453,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-} 
+}

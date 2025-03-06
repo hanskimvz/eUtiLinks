@@ -8,21 +8,22 @@ import 'core/localization/locale_provider.dart';
 import 'core/routes/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/server_config.dart';
+// import 'core/providers/locale_provider.dart';
 
 void main() async {
   // Flutter 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 로케일 초기화
   final localeProvider = LocaleProvider();
   await localeProvider.init();
-  
+
   // 저장된 서버 설정 로드
   await ServerConfig.loadSavedConfig();
-  
+
   runApp(
-    ChangeNotifierProvider.value(
-      value: localeProvider,
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => LocaleProvider())],
       child: const MyApp(),
     ),
   );
@@ -35,12 +36,25 @@ class MyApp extends StatelessWidget {
   bool get _isMobileDevice {
     if (kIsWeb) {
       // 웹에서는 화면 크기로 판단
-      final windowWidth = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
+      final windowWidth =
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .views
+              .first
+              .physicalSize
+              .width;
       // final windowHeight = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.height;
-      final devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
-      
+      final devicePixelRatio =
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .views
+              .first
+              .devicePixelRatio;
+
       final logicalWidth = windowWidth / devicePixelRatio;
-      
+
       // 화면 너비가 768px 미만이면 모바일로 간주
       return logicalWidth < 768;
     }
@@ -51,12 +65,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localeProvider = Provider.of<LocaleProvider>(context);
-    
+
     // 모바일 기기인 경우 installer 페이지로, 그렇지 않으면 로그인 페이지로 이동
-    final String initialRoute = _isMobileDevice ? AppRouter.installer : AppRouter.login;
-    
+    final String initialRoute =
+        _isMobileDevice ? AppRouter.installer : AppRouter.login;
+
     return MaterialApp(
-      title: 'GAS 인스톨러',
+      title: 'GAS 인스톨러', // 앱 타이틀은 앱 시작 시 context가 없어 다국어 적용 불가
       theme: AppTheme.lightTheme,
       initialRoute: initialRoute,
       onGenerateRoute: AppRouter.generateRoute,
@@ -68,6 +83,9 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: LocaleProvider.supportedLocales,
+      // 앱 이름은 다국어 지원을 위해 onGenerateTitle 사용
+      onGenerateTitle:
+          (BuildContext context) => AppLocalizations.of(context)!.appTitle,
     );
   }
 }

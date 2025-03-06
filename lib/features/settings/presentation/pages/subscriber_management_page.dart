@@ -8,12 +8,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/models/subscriber_model.dart';
 import '../../../../core/services/subscriber_service.dart';
 import '../../../../core/constants/api_constants.dart';
+import 'subscriber_info_page.dart';
 
 class SubscriberManagementPage extends StatefulWidget {
   const SubscriberManagementPage({super.key});
 
   @override
-  State<SubscriberManagementPage> createState() => _SubscriberManagementPageState();
+  State<SubscriberManagementPage> createState() =>
+      _SubscriberManagementPageState();
 }
 
 class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
@@ -23,7 +25,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   late final SubscriberService _subscriberService;
-  
+
   // 정렬 상태를 관리하기 위한 변수 추가
   int _sortColumnIndex = 0;
   bool _sortAscending = true;
@@ -33,9 +35,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
   @override
   void initState() {
     super.initState();
-    _subscriberService = SubscriberService(
-      baseUrl: ApiConstants.serverUrl,
-    );
+    _subscriberService = SubscriberService(baseUrl: ApiConstants.serverUrl);
     _loadSubscribers();
   }
 
@@ -53,7 +53,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
 
     try {
       final subscribers = await _subscriberService.getSubscribers();
-      
+
       setState(() {
         _subscribers = subscribers;
         _filteredSubscribers = subscribers;
@@ -72,20 +72,23 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
       if (query.isEmpty) {
         _filteredSubscribers = _subscribers;
       } else {
-        _filteredSubscribers = _subscribers.where((subscriber) {
-          final searchFields = [
-            subscriber.subscriberId,
-            subscriber.customerName ?? '',
-            subscriber.customerNo ?? '',
-            subscriber.subscriberNo ?? '',
-            subscriber.meterId ?? '',
-            subscriber.phoneNumber ?? '',
-            subscriber.email ?? '',
-            _getFormattedAddress(subscriber),
-          ].map((s) => s.toLowerCase());
-          
-          return searchFields.any((field) => field.contains(query.toLowerCase()));
-        }).toList();
+        _filteredSubscribers =
+            _subscribers.where((subscriber) {
+              final searchFields = [
+                subscriber.subscriberId,
+                subscriber.customerName ?? '',
+                subscriber.customerNo ?? '',
+                subscriber.subscriberNo ?? '',
+                subscriber.meterId ?? '',
+                subscriber.phoneNumber ?? '',
+                subscriber.email ?? '',
+                _getFormattedAddress(subscriber),
+              ].map((s) => s.toLowerCase());
+
+              return searchFields.any(
+                (field) => field.contains(query.toLowerCase()),
+              );
+            }).toList();
       }
     });
   }
@@ -104,22 +107,26 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
     if (bindDate == null || bindDate.isEmpty) {
       return '';
     }
-    
+
     // 밀리초 부분 제거 (점 이후 부분 제거)
     final parts = bindDate.split('.');
     return parts[0];
   }
 
-  void _sort<T>(Comparable<T> Function(SubscriberModel subscriber) getField, int columnIndex, bool ascending) {
+  void _sort<T>(
+    Comparable<T> Function(SubscriberModel subscriber) getField,
+    int columnIndex,
+    bool ascending,
+  ) {
     _filteredSubscribers.sort((a, b) {
       final aValue = getField(a);
       final bValue = getField(b);
-      
+
       return ascending
           ? Comparable.compare(aValue, bValue)
           : Comparable.compare(bValue, aValue);
     });
-    
+
     setState(() {
       _sortColumnIndex = columnIndex;
       _sortAscending = ascending;
@@ -132,7 +139,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
       // Excel 파일 생성
       final excel = Excel.createExcel();
       final sheet = excel['가입자 목록'];
-      
+
       // 헤더 추가
       sheet.appendRow([
         TextCellValue('No.'),
@@ -148,7 +155,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
         TextCellValue(localizations.bindDeviceId),
         TextCellValue(localizations.bindDate),
       ]);
-      
+
       // 데이터 추가
       for (final subscriber in _filteredSubscribers) {
         sheet.appendRow([
@@ -167,17 +174,19 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
         ]);
       }
 
-      final fileName = '가입자목록_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
-      
+      final fileName =
+          '가입자목록_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
+
       if (kIsWeb) {
         // 웹 환경에서의 다운로드 처리
         final bytes = excel.encode()!;
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.document.createElement('a') as html.AnchorElement
-          ..href = url
-          ..style.display = 'none'
-          ..download = fileName;
+        final anchor =
+            html.document.createElement('a') as html.AnchorElement
+              ..href = url
+              ..style.display = 'none'
+              ..download = fileName;
         html.document.body!.children.add(anchor);
         anchor.click();
         html.document.body!.children.remove(anchor);
@@ -190,17 +199,17 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
           type: FileType.custom,
           allowedExtensions: ['xlsx'],
         );
-        
+
         if (result != null) {
           final file = File(result);
           await file.writeAsBytes(excel.encode()!);
         }
       }
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.excelFileSaved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(localizations.excelFileSaved)));
       }
     } catch (e) {
       if (mounted) {
@@ -235,10 +244,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
@@ -258,7 +264,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -266,21 +272,15 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
         children: [
           Text(
             localizations.subscriberManagement,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             localizations.subscriberManagementDescription,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          
+
           // 검색 및 버튼 영역
           Row(
             children: [
@@ -304,7 +304,10 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -321,7 +324,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 통계 카드
           Card(
             child: Padding(
@@ -337,13 +340,18 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                   ),
                   _buildStatCard(
                     title: localizations.activeSubscribers,
-                    value: _subscribers.where((s) => s.isActive).length.toString(),
+                    value:
+                        _subscribers.where((s) => s.isActive).length.toString(),
                     icon: Icons.check_circle,
                     color: Colors.green,
                   ),
                   _buildStatCard(
                     title: localizations.inactiveSubscribers,
-                    value: _subscribers.where((s) => !s.isActive).length.toString(),
+                    value:
+                        _subscribers
+                            .where((s) => !s.isActive)
+                            .length
+                            .toString(),
                     icon: Icons.cancel,
                     color: Colors.grey,
                   ),
@@ -352,23 +360,33 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // 데이터 테이블
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage.isNotEmpty
-                    ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage.isNotEmpty
+                    ? Center(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    )
                     : Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: _filteredSubscribers.isEmpty
-                              ? const Center(child: Text('데이터가 없습니다.'))
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            _filteredSubscribers.isEmpty
+                                ? const Center(child: Text('데이터가 없습니다.'))
+                                : Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 16.0),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16.0,
+                                      ),
                                       child: Text(
                                         localizations.subscriberList,
                                         style: const TextStyle(
@@ -383,8 +401,8 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                           sortColumnIndex: _sortColumnIndex,
                                           sortAscending: _sortAscending,
                                           headingRowHeight: 56,
-                                          dataRowMinHeight: 48,
-                                          dataRowMaxHeight: 48,
+                                          dataRowMinHeight: 38,
+                                          dataRowMaxHeight: 38,
                                           horizontalMargin: 20,
                                           columnSpacing: 30,
                                           showCheckboxColumn: false,
@@ -392,118 +410,299 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                             DataColumn(
                                               label: Text('No.'),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.subscriberId, columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.subscriberId,
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.customerName),
+                                              label: Text(
+                                                localizations.customerName,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.customerName ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.customerName ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.customerNo),
+                                              label: Text(
+                                                localizations.customerNo,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.customerNo ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.customerNo ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.address),
+                                              label: Text(
+                                                localizations.address,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => _getFormattedAddress(subscriber), columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      _getFormattedAddress(
+                                                        subscriber,
+                                                      ),
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.shareHouse),
+                                              label: Text(
+                                                localizations.shareHouse,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.shareHouse ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.shareHouse ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.category),
+                                              label: Text(
+                                                localizations.category,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.category ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.category ?? '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.subscriberNo),
+                                              label: Text(
+                                                localizations.subscriberNo,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.subscriberNo ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.subscriberNo ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.meterId),
+                                              label: Text(
+                                                localizations.meterId,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.meterId ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.meterId ?? '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.subscriberClass),
+                                              label: Text(
+                                                localizations.subscriberClass,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.subscriberClass ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber
+                                                          .subscriberClass ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.inOutdoor),
+                                              label: Text(
+                                                localizations.inOutdoor,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.inOutdoor ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.inOutdoor ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.bindDeviceId),
+                                              label: Text(
+                                                localizations.bindDeviceId,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => subscriber.bindDeviceId ?? '', columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      subscriber.bindDeviceId ??
+                                                      '',
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                             DataColumn(
-                                              label: Text(localizations.bindDate),
+                                              label: Text(
+                                                localizations.bindDate,
+                                              ),
                                               onSort: (columnIndex, ascending) {
-                                                _sort<String>((subscriber) => _getFormattedBindDate(subscriber.bindDate), columnIndex, ascending);
+                                                _sort<String>(
+                                                  (subscriber) =>
+                                                      _getFormattedBindDate(
+                                                        subscriber.bindDate,
+                                                      ),
+                                                  columnIndex,
+                                                  ascending,
+                                                );
                                               },
                                             ),
                                           ],
-                                          rows: _getPaginatedData().map((subscriber) {
-                                            final address = _getFormattedAddress(subscriber);
-                                            
-                                            return DataRow(
-                                              cells: [
-                                                DataCell(Text(subscriber.subscriberId)),
-                                                DataCell(Text(subscriber.customerName ?? '')),
-                                                DataCell(Text(subscriber.customerNo ?? '')),
-                                                DataCell(Text(address)),
-                                                DataCell(Text(subscriber.shareHouse ?? '')),
-                                                DataCell(Text(subscriber.category ?? '')),
-                                                DataCell(Text(subscriber.subscriberNo ?? '')),
-                                                DataCell(Text(subscriber.meterId ?? '')),
-                                                DataCell(Text(subscriber.subscriberClass ?? '')),
-                                                DataCell(Text(subscriber.inOutdoor ?? '')),
-                                                DataCell(Text(subscriber.bindDeviceId ?? '')),
-                                                DataCell(Text(_getFormattedBindDate(subscriber.bindDate))),
-                                              ],
-                                              onSelectChanged: (_) {
-                                                // 가입자 상세 정보 페이지로 이동 또는 상세 정보 다이얼로그 표시
-                                              },
-                                            );
-                                          }).toList(),
+                                          rows:
+                                              _getPaginatedData().map((
+                                                subscriber,
+                                              ) {
+                                                final address =
+                                                    _getFormattedAddress(
+                                                      subscriber,
+                                                    );
+
+                                                return DataRow(
+                                                  cells: [
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.subscriberId,
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber
+                                                                .customerName ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.customerNo ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(Text(address)),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.shareHouse ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.category ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber
+                                                                .subscriberNo ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.meterId ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber
+                                                                .subscriberClass ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber.inOutdoor ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        subscriber
+                                                                .bindDeviceId ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        _getFormattedBindDate(
+                                                          subscriber.bindDate,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                  onSelectChanged: (_) {
+                                                    // 가입자 상세 정보 페이지로 이동
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder:
+                                                            (
+                                                              context,
+                                                            ) => SubscriberInfoPage(
+                                                              meterId:
+                                                                  subscriber
+                                                                      .meterId ??
+                                                                  '',
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              }).toList(),
                                         ),
                                       ),
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.only(top: 16.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Row(
                                             children: [
-                                              Text('${localizations.rowsPerPage}: '),
+                                              Text(
+                                                '${localizations.rowsPerPage}: ',
+                                              ),
                                               DropdownButton<int>(
                                                 value: _rowsPerPage,
-                                                items: const [10, 20, 50, 100].map((int value) {
-                                                  return DropdownMenuItem<int>(
-                                                    value: value,
-                                                    child: Text('$value'),
-                                                  );
-                                                }).toList(),
+                                                items:
+                                                    const [10, 20, 50, 100].map(
+                                                      (int value) {
+                                                        return DropdownMenuItem<
+                                                          int
+                                                        >(
+                                                          value: value,
+                                                          child: Text('$value'),
+                                                        );
+                                                      },
+                                                    ).toList(),
                                                 onChanged: (value) {
                                                   setState(() {
                                                     _rowsPerPage = value!;
@@ -516,48 +715,77 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                           Row(
                                             children: [
                                               IconButton(
-                                                icon: const Icon(Icons.first_page),
-                                                onPressed: _currentPage > 0
-                                                    ? () {
-                                                        setState(() {
-                                                          _currentPage = 0;
-                                                        });
-                                                      }
-                                                    : null,
+                                                icon: const Icon(
+                                                  Icons.first_page,
+                                                ),
+                                                onPressed:
+                                                    _currentPage > 0
+                                                        ? () {
+                                                          setState(() {
+                                                            _currentPage = 0;
+                                                          });
+                                                        }
+                                                        : null,
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.chevron_left),
-                                                onPressed: _currentPage > 0
-                                                    ? () {
-                                                        setState(() {
-                                                          _currentPage--;
-                                                        });
-                                                      }
-                                                    : null,
+                                                icon: const Icon(
+                                                  Icons.chevron_left,
+                                                ),
+                                                onPressed:
+                                                    _currentPage > 0
+                                                        ? () {
+                                                          setState(() {
+                                                            _currentPage--;
+                                                          });
+                                                        }
+                                                        : null,
                                               ),
                                               Text(
                                                 '${_currentPage + 1} / ${(_filteredSubscribers.length / _rowsPerPage).ceil()}',
-                                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.chevron_right),
-                                                onPressed: _currentPage < (_filteredSubscribers.length / _rowsPerPage).ceil() - 1
-                                                    ? () {
-                                                        setState(() {
-                                                          _currentPage++;
-                                                        });
-                                                      }
-                                                    : null,
+                                                icon: const Icon(
+                                                  Icons.chevron_right,
+                                                ),
+                                                onPressed:
+                                                    _currentPage <
+                                                            (_filteredSubscribers
+                                                                            .length /
+                                                                        _rowsPerPage)
+                                                                    .ceil() -
+                                                                1
+                                                        ? () {
+                                                          setState(() {
+                                                            _currentPage++;
+                                                          });
+                                                        }
+                                                        : null,
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.last_page),
-                                                onPressed: _currentPage < (_filteredSubscribers.length / _rowsPerPage).ceil() - 1
-                                                    ? () {
-                                                        setState(() {
-                                                          _currentPage = (_filteredSubscribers.length / _rowsPerPage).ceil() - 1;
-                                                        });
-                                                      }
-                                                    : null,
+                                                icon: const Icon(
+                                                  Icons.last_page,
+                                                ),
+                                                onPressed:
+                                                    _currentPage <
+                                                            (_filteredSubscribers
+                                                                            .length /
+                                                                        _rowsPerPage)
+                                                                    .ceil() -
+                                                                1
+                                                        ? () {
+                                                          setState(() {
+                                                            _currentPage =
+                                                                (_filteredSubscribers
+                                                                            .length /
+                                                                        _rowsPerPage)
+                                                                    .ceil() -
+                                                                1;
+                                                          });
+                                                        }
+                                                        : null,
                                               ),
                                             ],
                                           ),
@@ -566,8 +794,8 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                     ),
                                   ],
                                 ),
-                        ),
                       ),
+                    ),
           ),
         ],
       ),
@@ -576,14 +804,15 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
 
   List<SubscriberModel> _getPaginatedData() {
     final startIndex = _currentPage * _rowsPerPage;
-    final endIndex = startIndex + _rowsPerPage > _filteredSubscribers.length
-        ? _filteredSubscribers.length
-        : startIndex + _rowsPerPage;
-    
+    final endIndex =
+        startIndex + _rowsPerPage > _filteredSubscribers.length
+            ? _filteredSubscribers.length
+            : startIndex + _rowsPerPage;
+
     if (startIndex >= _filteredSubscribers.length) {
       return [];
     }
-    
+
     return _filteredSubscribers.sublist(startIndex, endIndex);
   }
-} 
+}

@@ -11,7 +11,7 @@ class MonthlyStatisticsPage extends StatefulWidget {
 class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
   int _selectedYear = DateTime.now().year;
   int _selectedMonth = DateTime.now().month;
-  
+
   final List<Map<String, dynamic>> _monthlyData = [
     {
       'year': DateTime.now().year,
@@ -59,84 +59,92 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '월별 현황',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '월별 현황',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // 년월 선택기
-          Row(
-            children: [
-              const Text('년월 선택: ', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              DropdownButton<int>(
-                value: _selectedYear,
-                items: List.generate(5, (index) => DateTime.now().year - index)
-                    .map((year) => DropdownMenuItem<int>(
-                          value: year,
-                          child: Text('$year년'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedYear = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(width: 16),
-              DropdownButton<int>(
-                value: _selectedMonth,
-                items: List.generate(12, (index) => index + 1)
-                    .map((month) => DropdownMenuItem<int>(
-                          value: month,
-                          child: Text('$month월'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedMonth = value;
-                    });
-                  }
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          
-          // 통계 카드
-          if (_selectedMonthData != null) ...[
-            _buildStatisticsCards(),
-            const SizedBox(height: 24),
-            _buildDailyUsageChart(),
-            const SizedBox(height: 24),
-            _buildMonthlyComparisonChart(),
-          ] else
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Text('선택한 월의 데이터가 없습니다.'),
-              ),
+            const SizedBox(height: 16),
+
+            // 년월 선택기
+            Row(
+              children: [
+                const Text(
+                  '년월 선택: ',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<int>(
+                  value: _selectedYear,
+                  items:
+                      List.generate(5, (index) => DateTime.now().year - index)
+                          .map(
+                            (year) => DropdownMenuItem<int>(
+                              value: year,
+                              child: Text('$year년'),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedYear = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(width: 16),
+                DropdownButton<int>(
+                  value: _selectedMonth,
+                  items:
+                      List.generate(12, (index) => index + 1)
+                          .map(
+                            (month) => DropdownMenuItem<int>(
+                              value: month,
+                              child: Text('$month월'),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedMonth = value;
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
-        ],
+            const SizedBox(height: 24),
+
+            // 통계 카드
+            if (_selectedMonthData != null) ...[
+              _buildStatisticsCards(),
+              const SizedBox(height: 24),
+              _buildDailyUsageChart(),
+              const SizedBox(height: 24),
+              _buildMonthlyComparisonChart(),
+            ] else
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text('선택한 월의 데이터가 없습니다.'),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatisticsCards() {
     final data = _selectedMonthData!;
-    
+
     return GridView.count(
       crossAxisCount: 3,
       childAspectRatio: 2.5,
@@ -146,10 +154,18 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
       mainAxisSpacing: 16,
       children: [
         _buildStatCard('총 사용량', '${data['totalUsage']} m³', Colors.blue[100]!),
-        _buildStatCard('평균 사용량', '${data['averageUsage']} m³', Colors.green[100]!),
+        _buildStatCard(
+          '평균 사용량',
+          '${data['averageUsage']} m³',
+          Colors.green[100]!,
+        ),
         _buildStatCard('피크 일자', '${data['peakDay']}일', Colors.orange[100]!),
         _buildStatCard('피크 사용량', '${data['peakUsage']} m³', Colors.red[100]!),
-        _buildStatCard('활성 단말기', '${data['activeDevices']}대', Colors.purple[100]!),
+        _buildStatCard(
+          '활성 단말기',
+          '${data['activeDevices']}대',
+          Colors.purple[100]!,
+        ),
         _buildStatCard('이상 발생', '${data['anomalies']}건', Colors.amber[100]!),
       ],
     );
@@ -167,18 +183,12 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -189,17 +199,16 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
   Widget _buildDailyUsageChart() {
     final data = _selectedMonthData!;
     final dailyUsage = data['dailyUsage'] as List<dynamic>;
-    final maxUsage = dailyUsage.reduce((a, b) => a > b ? a : b);
-    
+    final maxUsage = dailyUsage
+        .map((value) => value as double)
+        .reduce((a, b) => a > b ? a : b);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           '일별 사용량',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -213,7 +222,7 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List.generate(dailyUsage.length, (index) {
               final height = (dailyUsage[index] / maxUsage) * 150;
-              
+
               return Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
@@ -222,15 +231,13 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
                     children: [
                       Container(
                         height: height,
-                        color: index == data['peakDay'] - 1 
-                            ? Colors.red 
-                            : Colors.blue,
+                        color:
+                            index == data['peakDay'] - 1
+                                ? Colors.red
+                                : Colors.blue,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '${index + 1}',
-                        style: const TextStyle(fontSize: 8),
-                      ),
+                      Text('${index + 1}', style: const TextStyle(fontSize: 8)),
                     ],
                   ),
                 ),
@@ -248,10 +255,7 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
       children: [
         const Text(
           '최근 3개월 사용량 비교',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Container(
@@ -264,41 +268,41 @@ class _MonthlyStatisticsPageState extends State<MonthlyStatisticsPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: _monthlyData.map((data) {
-              final height = (data['totalUsage'] / 40000) * 150;
-              final monthName = DateFormat('yyyy년 MM월').format(
-                DateTime(data['year'], data['month'], 1)
-              );
-              
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    width: 80,
-                    height: height,
-                    color: data['year'] == _selectedYear && data['month'] == _selectedMonth
-                        ? Colors.blue
-                        : Colors.blue[200],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    monthName,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${data['totalUsage']} m³',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
+            children:
+                _monthlyData.map((data) {
+                  final height = (data['totalUsage'] / 40000) * 150;
+                  final monthName = DateFormat(
+                    'yyyy년 MM월',
+                  ).format(DateTime(data['year'], data['month'], 1));
+
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 80,
+                        height: height,
+                        color:
+                            data['year'] == _selectedYear &&
+                                    data['month'] == _selectedMonth
+                                ? Colors.blue
+                                : Colors.blue[200],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(monthName, style: const TextStyle(fontSize: 12)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${data['totalUsage']} m³',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
           ),
         ),
       ],
     );
   }
-} 
+}
