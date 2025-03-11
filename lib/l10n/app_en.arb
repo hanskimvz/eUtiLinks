@@ -179,13 +179,6 @@
   "welcome": "Welcome",
   "excelFileSaved": "Excel file has been saved.",
   "excelFileSaveError": "Error saving Excel file: {error}",
-  "@excelFileSaveError": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   
   "shareHouse": "Share House",
   "category": "Category",
@@ -211,6 +204,7 @@
   "dataInterval": "Data Transmission Interval",
   "comment": "Comment",
   "completeInstallation": "Complete Installation",
+  "completeUninstallation": "Complete Uninstallation",
   "installationCompleted": "Installation completed successfully.",
   "selectDate": "Select Date",
   "enterComment": "Enter installation related comments",
@@ -261,5 +255,12 @@
   "disconnectDevice": "Disconnect Device",
   "disconnectingDevice": "Disconnecting device...",
   "deviceDisconnectedSuccessfully": "Device has been disconnected successfully",
-  "deviceDisconnectionError": "Error disconnecting device"
-} 
+  "deviceDisconnectionError": "Error disconnecting device",
+  "pendingUserApproval": "Pending User Approval",
+  "noPendingUsers": "No pending users",
+  "dbName": "DB Name",
+  "enterUserDbName": "Enter user's database name",
+  "activationStatus": "Activation Status",
+  "userApproved": "User has been approved",
+  "approve": "Approve"
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:universal_html/html.dart' as html;
@@ -23,7 +24,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   late final DeviceService _deviceService;
-  
+
   // 정렬 상태를 관리하기 위한 변수 추가
   int _sortColumnIndex = 0;
   bool _sortAscending = true;
@@ -33,9 +34,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
   @override
   void initState() {
     super.initState();
-    _deviceService = DeviceService(
-      baseUrl: ApiConstants.serverUrl,
-    );
+    _deviceService = DeviceService(baseUrl: ApiConstants.serverUrl);
     _loadDevices();
   }
 
@@ -53,18 +52,33 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
 
     try {
       final tableHead = [
-        'no_', 'customer_name', 'customer_no', 'last_count', 'addr_prov', 
-        'addr_city', 'addr_dist', 'addr_detail', 'share_house', 'addr_apt',
-        'category', 'subscriber_no', 'meter_id', 'class', 'in_outdoor', 
-        'device_uid', 'last_access', 'flag'
+        'no_',
+        'customer_name',
+        'customer_no',
+        'last_count',
+        'addr_prov',
+        'addr_city',
+        'addr_dist',
+        'addr_detail',
+        'share_house',
+        'addr_apt',
+        'category',
+        'subscriber_no',
+        'meter_id',
+        'class',
+        'in_outdoor',
+        'device_uid',
+        'last_access',
+        'flag',
       ];
-      
+
       final devices = await _deviceService.getDevicesWithFilter(
-        page: 'device_info',
         fields: tableHead,
-        filter: {'meter_id': {'\$exists': true, '\$ne': ''}},
+        filter: {
+          'meter_id': {'\$exists': true, '\$ne': ''},
+        },
       );
-      
+
       setState(() {
         _devices = devices;
         _filteredDevices = devices;
@@ -83,18 +97,21 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
       if (query.isEmpty) {
         _filteredDevices = _devices;
       } else {
-        _filteredDevices = _devices.where((device) {
-          final searchFields = [
-            device.deviceUid,
-            device.customerName ?? '',
-            device.customerNo ?? '',
-            device.subscriberNo ?? '',
-            device.meterId ?? '',
-            _getFormattedAddress(device),
-          ].map((s) => s.toLowerCase());
-          
-          return searchFields.any((field) => field.contains(query.toLowerCase()));
-        }).toList();
+        _filteredDevices =
+            _devices.where((device) {
+              final searchFields = [
+                device.deviceUid,
+                device.customerName ?? '',
+                device.customerNo ?? '',
+                device.subscriberNo ?? '',
+                device.meterId ?? '',
+                _getFormattedAddress(device),
+              ].map((s) => s.toLowerCase());
+
+              return searchFields.any(
+                (field) => field.contains(query.toLowerCase()),
+              );
+            }).toList();
       }
     });
   }
@@ -116,16 +133,20 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
     return flag ? 'O' : 'X';
   }
 
-  void _sort<T>(Comparable<T> Function(DeviceModel device) getField, int columnIndex, bool ascending) {
+  void _sort<T>(
+    Comparable<T> Function(DeviceModel device) getField,
+    int columnIndex,
+    bool ascending,
+  ) {
     _filteredDevices.sort((a, b) {
       final aValue = getField(a);
       final bValue = getField(b);
-      
+
       return ascending
           ? Comparable.compare(aValue, bValue)
           : Comparable.compare(bValue, aValue);
     });
-    
+
     setState(() {
       _sortColumnIndex = columnIndex;
       _sortAscending = ascending;
@@ -138,7 +159,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
       // Excel 파일 생성
       final excel = Excel.createExcel();
       final sheet = excel['디바이스 목록'];
-      
+
       // 헤더 추가
       final headers = [
         'No.',
@@ -155,31 +176,45 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
         localizations.subscriberNo,
         localizations.meterId,
         localizations.deviceUid,
-        
+
         localizations.lastAccess,
         localizations.status,
         localizations.subscriberClass,
         localizations.inOutdoor,
       ];
-      
+
       // 헤더 행 추가
       sheet.appendRow(headers.map((header) => TextCellValue(header)).toList());
-      
+
       // 컬럼 너비 설정
-      final columnWidths = [5.0, 10.0, 12.0, 25.0, 8.0, 10.0, 10.0, 15.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0];
+      final columnWidths = [
+        5.0,
+        10.0,
+        12.0,
+        25.0,
+        8.0,
+        10.0,
+        10.0,
+        15.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+      ];
       for (var i = 0; i < columnWidths.length; i++) {
         sheet.setColumnWidth(i, columnWidths[i]);
       }
-      
+
       // 헤더 스타일 적용 - 기본 스타일만 적용
       for (var i = 0; i < headers.length; i++) {
-        final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
-        cell.cellStyle = CellStyle(
-          bold: true,
-          fontSize: 12,
+        final cell = sheet.cell(
+          CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
         );
+        cell.cellStyle = CellStyle(bold: true, fontSize: 12);
       }
-      
+
       // 데이터 추가
       for (var rowIndex = 0; rowIndex < _filteredDevices.length; rowIndex++) {
         final device = _filteredDevices[rowIndex];
@@ -198,27 +233,29 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
           TextCellValue(_flagToSymbol(device.shareHouse)),
           TextCellValue(device.meterId ?? ''),
           TextCellValue(device.deviceUid),
-          
+
           TextCellValue(device.lastAccess ?? ''),
           TextCellValue(device.flag ?? ''),
           TextCellValue(device.deviceClass ?? ''),
           TextCellValue(device.inOutdoor ?? ''),
         ];
-        
+
         sheet.appendRow(rowData);
       }
 
-      final fileName = '디바이스목록_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
-      
+      final fileName =
+          '디바이스목록_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
+
       if (kIsWeb) {
         // 웹 환경에서의 다운로드 처리
         final bytes = excel.encode()!;
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.document.createElement('a') as html.AnchorElement
-          ..href = url
-          ..style.display = 'none'
-          ..download = fileName;
+        final anchor =
+            html.document.createElement('a') as html.AnchorElement
+              ..href = url
+              ..style.display = 'none'
+              ..download = fileName;
         html.document.body!.children.add(anchor);
         anchor.click();
         html.document.body!.children.remove(anchor);
@@ -231,17 +268,17 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
           type: FileType.custom,
           allowedExtensions: ['xlsx'],
         );
-        
+
         if (result != null) {
           final file = File(result);
           await file.writeAsBytes(excel.encode()!);
         }
       }
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizations.excelFileSaved)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(localizations.excelFileSaved)));
       }
     } catch (e) {
       if (mounted) {
@@ -258,15 +295,15 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
   List<DeviceModel> _getPaginatedData() {
     final startIndex = _currentPage * _rowsPerPage;
     final endIndex = startIndex + _rowsPerPage;
-    
+
     if (startIndex >= _filteredDevices.length) {
       return [];
     }
-    
+
     if (endIndex > _filteredDevices.length) {
       return _filteredDevices.sublist(startIndex);
     }
-    
+
     return _filteredDevices.sublist(startIndex, endIndex);
   }
 
@@ -274,7 +311,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
     if (flag == null || flag.isEmpty) {
       return Colors.grey;
     }
-    
+
     switch (flag.toLowerCase()) {
       case 'active':
       case 'normal':
@@ -293,7 +330,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
     if (flag == null || flag.isEmpty) {
       return '알 수 없음';
     }
-    
+
     switch (flag.toLowerCase()) {
       case 'active':
       case 'normal':
@@ -325,10 +362,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
             const SizedBox(height: 8),
             Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
@@ -374,7 +408,10 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.warning_amber_outlined, color: Colors.orange),
+                leading: const Icon(
+                  Icons.warning_amber_outlined,
+                  color: Colors.orange,
+                ),
                 title: const Text('이상 증상 확인'),
                 onTap: () {
                   Navigator.pop(context);
@@ -399,9 +436,9 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
   void _showDeviceInfo(DeviceModel device) {
     // 장치 정보 표시 로직
     Navigator.pushNamed(
-      context, 
-      '/device_info', 
-      arguments: {'deviceId': device.meterId}
+      context,
+      '/device_info',
+      arguments: {'deviceId': device.meterId},
     );
   }
 
@@ -416,9 +453,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
           content: const SizedBox(
             width: 600,
             height: 400,
-            child: Center(
-              child: Text('사용량 내역 기능은 준비 중입니다.'),
-            ),
+            child: Center(child: Text('사용량 내역 기능은 준비 중입니다.')),
           ),
           actions: [
             TextButton(
@@ -444,9 +479,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
           content: const SizedBox(
             width: 600,
             height: 400,
-            child: Center(
-              child: Text('이상 증상 확인 기능은 준비 중입니다.'),
-            ),
+            child: Center(child: Text('이상 증상 확인 기능은 준비 중입니다.')),
           ),
           actions: [
             TextButton(
@@ -464,7 +497,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -472,21 +505,15 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
         children: [
           Text(
             '디바이스 조회',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             '디바이스 정보를 조회합니다.',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 16),
-          
+
           // 검색 및 버튼 영역
           Row(
             children: [
@@ -516,7 +543,7 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 통계 카드
           Card(
             child: Padding(
@@ -532,19 +559,29 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
                   ),
                   _buildStatCard(
                     title: '정상 디바이스',
-                    value: _devices.where((d) => 
-                      d.flag?.toLowerCase() == 'normal' || 
-                      d.flag?.toLowerCase() == 'active'
-                    ).length.toString(),
+                    value:
+                        _devices
+                            .where(
+                              (d) =>
+                                  d.flag?.toLowerCase() == 'normal' ||
+                                  d.flag?.toLowerCase() == 'active',
+                            )
+                            .length
+                            .toString(),
                     icon: Icons.check_circle,
                     color: Colors.green,
                   ),
                   _buildStatCard(
                     title: '주의 필요',
-                    value: _devices.where((d) => 
-                      d.flag?.toLowerCase() == 'warning' || 
-                      d.flag?.toLowerCase() == 'error'
-                    ).length.toString(),
+                    value:
+                        _devices
+                            .where(
+                              (d) =>
+                                  d.flag?.toLowerCase() == 'warning' ||
+                                  d.flag?.toLowerCase() == 'error',
+                            )
+                            .length
+                            .toString(),
                     icon: Icons.warning,
                     color: Colors.orange,
                   ),
@@ -553,23 +590,33 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // 데이터 테이블
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage.isNotEmpty
-                    ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage.isNotEmpty
+                    ? Center(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    )
                     : Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: _filteredDevices.isEmpty
-                              ? const Center(child: Text('데이터가 없습니다.'))
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child:
+                            _filteredDevices.isEmpty
+                                ? const Center(child: Text('데이터가 없습니다.'))
+                                : Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 16.0),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16.0,
+                                      ),
                                       child: Text(
                                         localizations.deviceList,
                                         style: const TextStyle(
@@ -594,173 +641,387 @@ class _DeviceQueryPageState extends State<DeviceQueryPage> {
                                             columns: [
                                               DataColumn(
                                                 label: Text('No.'),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<num>((device) => device.no_ ?? 0, columnIndex, ascending);
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<num>(
+                                                    (device) => device.no_ ?? 0,
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.customerName),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.customerName ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.customerName,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.customerName ??
+                                                        '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.customerNo),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.customerNo ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.customerNo,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.customerNo ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.address),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => _getFormattedAddress(device), columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.address,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        _getFormattedAddress(
+                                                          device,
+                                                        ),
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.meterId),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.meterId ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.meterId,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.meterId ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.deviceUid),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.deviceUid, columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.deviceUid,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.deviceUid,
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.lastCount),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.lastCount?.toString() ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.lastCount,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.lastCount
+                                                            ?.toString() ??
+                                                        '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.lastAccess),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.lastAccess ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.lastAccess,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.lastAccess ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.status),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.flag ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.status,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.flag ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.category),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.category ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.category,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.category ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.subscriberClass),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.deviceClass ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.subscriberClass,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.deviceClass ??
+                                                        '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                               DataColumn(
-                                                label: Text(localizations.inOutdoor),
-                                                onSort: (columnIndex, ascending) {
-                                                  _sort<String>((device) => device.inOutdoor ?? '', columnIndex, ascending);
+                                                label: Text(
+                                                  localizations.inOutdoor,
+                                                ),
+                                                onSort: (
+                                                  columnIndex,
+                                                  ascending,
+                                                ) {
+                                                  _sort<String>(
+                                                    (device) =>
+                                                        device.inOutdoor ?? '',
+                                                    columnIndex,
+                                                    ascending,
+                                                  );
                                                 },
                                               ),
                                             ],
-                                            rows: _getPaginatedData().map((device) {
-                                              final address = _getFormattedAddress(device);
-                                              
-                                              return DataRow(
-                                                onSelectChanged: (_) {
-                                                  _showDeviceMenu(device);
-                                                },
-                                                color: WidgetStateProperty.resolveWith<Color?>(
-                                                  (Set<WidgetState> states) {
-                                                    if (states.contains(WidgetState.hovered)) {
-                                                      return Colors.blue.withValues(
-                                                        red: Colors.blue.r,
-                                                        green: Colors.blue.g,
-                                                        blue: Colors.blue.b,
-                                                        alpha: 0.1 * 255,
+                                            rows:
+                                                _getPaginatedData().map((
+                                                  device,
+                                                ) {
+                                                  final address =
+                                                      _getFormattedAddress(
+                                                        device,
                                                       );
-                                                    }
-                                                    return null;
-                                                  },
-                                                ),
-                                                cells: [
-                                                  DataCell(Text(device.no_?.toString() ?? '')),
-                                                  DataCell(Text(device.customerName ?? '')),
-                                                  DataCell(Text(device.customerNo ?? '')),
-                                                  DataCell(Text(address)),
-                                                  DataCell(Text(device.meterId ?? '')),
-                                                  DataCell(Text(device.deviceUid)),
-                                                  DataCell(Text(device.lastCount?.toString() ?? '')),
-                                                  DataCell(Text(device.lastAccess ?? '')),
-                                                  DataCell(
-                                                    Row(
-                                                      children: [
-                                                        Container(
-                                                          width: 12,
-                                                          height: 12,
-                                                          decoration: BoxDecoration(
-                                                            color: _getStatusColor(device.flag),
-                                                            shape: BoxShape.circle,
-                                                          ),
+
+                                                  return DataRow(
+                                                    onSelectChanged: (_) {
+                                                      _showDeviceMenu(device);
+                                                    },
+                                                    color:
+                                                        WidgetStateProperty.resolveWith<
+                                                          Color?
+                                                        >((
+                                                          Set<WidgetState>
+                                                          states,
+                                                        ) {
+                                                          if (states.contains(
+                                                            WidgetState.hovered,
+                                                          )) {
+                                                            return Colors.blue
+                                                                .withValues(
+                                                                  red:
+                                                                      Colors
+                                                                          .blue
+                                                                          .r,
+                                                                  green:
+                                                                      Colors
+                                                                          .blue
+                                                                          .g,
+                                                                  blue:
+                                                                      Colors
+                                                                          .blue
+                                                                          .b,
+                                                                  alpha:
+                                                                      0.1 * 255,
+                                                                );
+                                                          }
+                                                          return null;
+                                                        }),
+                                                    cells: [
+                                                      DataCell(
+                                                        Text(
+                                                          device.no_
+                                                                  ?.toString() ??
+                                                              '',
                                                         ),
-                                                        const SizedBox(width: 8),
-                                                        Text(_getStatusText(device.flag)),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  DataCell(Text(device.category ?? '')),
-                                                  DataCell(Text(device.deviceClass ?? '')),
-                                                  DataCell(Text(device.inOutdoor ?? '')),
-                                                ],
-                                              );
-                                            }).toList(),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.customerName ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.customerNo ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                      DataCell(Text(address)),
+                                                      DataCell(
+                                                        Text(
+                                                          device.meterId ?? '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(device.deviceUid),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.lastCount
+                                                                  ?.toString() ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.lastAccess ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Row(
+                                                          children: [
+                                                            Container(
+                                                              width: 12,
+                                                              height: 12,
+                                                              decoration: BoxDecoration(
+                                                                color:
+                                                                    _getStatusColor(
+                                                                      device
+                                                                          .flag,
+                                                                    ),
+                                                                shape:
+                                                                    BoxShape
+                                                                        .circle,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
+                                                            Text(
+                                                              _getStatusText(
+                                                                device.flag,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.category ?? '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.deviceClass ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                      DataCell(
+                                                        Text(
+                                                          device.inOutdoor ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
+                                                }).toList(),
                                           ),
                                         ),
                                       ),
                                     ),
-                                    
+
                                     // 페이지네이션
                                     Padding(
                                       padding: const EdgeInsets.only(top: 16.0),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           IconButton(
                                             icon: const Icon(Icons.arrow_back),
-                                            onPressed: _currentPage > 0
-                                                ? () {
-                                                    setState(() {
-                                                      _currentPage--;
-                                                    });
-                                                  }
-                                                : null,
+                                            onPressed:
+                                                _currentPage > 0
+                                                    ? () {
+                                                      setState(() {
+                                                        _currentPage--;
+                                                      });
+                                                    }
+                                                    : null,
                                           ),
                                           Text(
                                             '${_currentPage + 1} / ${(_filteredDevices.length / _rowsPerPage).ceil()}',
-                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                           IconButton(
-                                            icon: const Icon(Icons.arrow_forward),
-                                            onPressed: (_currentPage + 1) * _rowsPerPage < _filteredDevices.length
-                                                ? () {
-                                                    setState(() {
-                                                      _currentPage++;
-                                                    });
-                                                  }
-                                                : null,
+                                            icon: const Icon(
+                                              Icons.arrow_forward,
+                                            ),
+                                            onPressed:
+                                                (_currentPage + 1) *
+                                                            _rowsPerPage <
+                                                        _filteredDevices.length
+                                                    ? () {
+                                                      setState(() {
+                                                        _currentPage++;
+                                                      });
+                                                    }
+                                                    : null,
                                           ),
                                         ],
                                       ),
                                     ),
                                   ],
                                 ),
-                        ),
                       ),
+                    ),
           ),
         ],
       ),
     );
   }
-} 
+}

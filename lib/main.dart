@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -71,7 +71,7 @@ class MyApp extends StatelessWidget {
         _isMobileDevice ? AppRouter.installer : AppRouter.login;
 
     return MaterialApp(
-      title: 'GAS 인스톨러', // 앱 타이틀은 앱 시작 시 context가 없어 다국어 적용 불가
+      title: 'GAS Manager', // 앱 타이틀은 앱 시작 시 context가 없어 다국어 적용 불가
       theme: AppTheme.lightTheme,
       initialRoute: initialRoute,
       onGenerateRoute: AppRouter.generateRoute,

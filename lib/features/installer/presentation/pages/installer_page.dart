@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/menu_constants.dart';
 import '../../../../core/services/auth_service.dart';
@@ -9,12 +10,8 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/scanner_utils.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
-// import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'installer_device_info.dart';
-// import 'package:permission_handler/permission_handler.dart';
-// import 'package:app_settings/app_settings.dart';
-// import './qr_scanner_page.dart';
 
 class InstallerPage extends StatefulWidget {
   const InstallerPage({super.key});
@@ -117,6 +114,14 @@ class _InstallerPageState extends State<InstallerPage> {
 
       // installer_id 필터를 적용하여 장치 목록 가져오기
       final devices = await _deviceService.getDevicesWithFilter(
+        fields: [
+          'device_uid',
+          'meter_id',
+          'customer_name',
+          'customer_no',
+          'flag',
+          'release_date',
+        ],
         filter: {'installer_id': loginId},
       );
 

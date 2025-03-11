@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-// import 'package:shared_preferences/shared_preferences.dart';
 import '../models/device_model.dart';
 import 'auth_service.dart';
 
@@ -25,10 +24,10 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'page': 'device_info',
+          'action': 'list',
           'format': 'json',
           'fields': [
             'device_uid',
@@ -83,14 +82,18 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/device/add'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'device_uid': device.deviceUid,
-          'customer_name': device.customerName,
-          'customer_no': device.customerNo,
-          'meter_id': device.meterId,
-          'flag': device.flag,
+          'action': 'add',
+          'format': 'json',
+          'data': {
+            'device_uid': device.deviceUid,
+            'customer_name': device.customerName,
+            'customer_no': device.customerNo,
+            'meter_id': device.meterId,
+            'flag': device.flag,
+          },
           ...authData,
         }),
       );
@@ -118,17 +121,19 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/update'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'page': 'device_info',
+          'action': 'modify',
           'format': 'json',
-          'device_uid': device.deviceUid,
-          'customer_name': device.customerName,
-          'customer_no': device.customerNo,
-          'meter_id': device.meterId,
-          // 'initial_count': device.initialCount,
-          'ref_interval': device.refInterval,
+          'data': {
+            'device_uid': device.deviceUid,
+            'customer_name': device.customerName,
+            'customer_no': device.customerNo,
+            'meter_id': device.meterId,
+            // 'initial_count': device.initialCount,
+            'ref_interval': device.refInterval,
+          },
           ...authData,
         }),
       );
@@ -156,9 +161,14 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/device/delete'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'device_uid': deviceUid, ...authData}),
+        body: jsonEncode({
+          'action': 'delete',
+          'format': 'json',
+          'data': {'device_uid': deviceUid},
+          ...authData,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -184,13 +194,12 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'page': 'device_info',
-          'device_uid': deviceUid,
+          'action': 'view',
           'format': 'json',
-          'fields': [],
+          'device_uid': deviceUid,
           ...authData,
         }),
       );
@@ -198,7 +207,7 @@ class DeviceService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data'] != null && data['data'].isNotEmpty) {
-          return DeviceModel.fromJson(data['data'][0]);
+          return DeviceModel.fromJson(data['data']);
         }
         throw Exception('장치 정보를 찾을 수 없습니다');
       } else {
@@ -210,7 +219,6 @@ class DeviceService {
   }
 
   Future<List<DeviceModel>> getDevicesWithFilter({
-    String page = 'device_info',
     List<String>? fields,
     Map<String, dynamic>? filter,
   }) async {
@@ -221,7 +229,7 @@ class DeviceService {
       }
 
       final Map<String, dynamic> requestBody = {
-        'page': page,
+        'action': 'list',
         'format': 'json',
         'fields':
             fields ??
@@ -261,7 +269,7 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -282,7 +290,7 @@ class DeviceService {
     }
   }
 
-  Future<bool> updateDeviceInstallation(Map<String, dynamic> data) async {
+  Future<bool> bindDeviceInstallation(Map<String, dynamic> data) async {
     try {
       // 인증 데이터가 비어있으면 초기화
       if (authData.isEmpty) {
@@ -290,14 +298,13 @@ class DeviceService {
       }
 
       final Map<String, dynamic> requestBody = {
-        'page': 'install_device_info',
         'format': 'json',
-        ...authData,
         ...data,
+        ...authData,
       };
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/update'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
@@ -325,10 +332,10 @@ class DeviceService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/device'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'page': 'device_info',
+          'action': 'list',
           'format': 'json',
           'fields': [
             'device_uid',

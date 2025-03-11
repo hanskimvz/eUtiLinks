@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/localization/locale_provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/server_config.dart';
 
@@ -17,13 +18,13 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   final _serverPortController = TextEditingController();
   bool _useCustomServer = false;
   bool _useDevServer = true;
-  
+
   @override
   void initState() {
     super.initState();
     _loadCurrentServerSettings();
   }
-  
+
   void _loadCurrentServerSettings() {
     setState(() {
       _serverAddressController.text = ApiConstants.serverAddress;
@@ -32,78 +33,80 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       _useDevServer = ApiConstants.isDevServer;
     });
   }
-  
+
   @override
   void dispose() {
     _serverAddressController.dispose();
     _serverPortController.dispose();
     super.dispose();
   }
-  
+
   void _saveServerSettings() async {
     final localizations = AppLocalizations.of(context)!;
-    
+
     if (_useCustomServer) {
       final address = _serverAddressController.text.trim();
       final portText = _serverPortController.text.trim();
-      
+
       if (address.isEmpty) {
         _showErrorDialog(localizations.serverAddressRequired);
         return;
       }
-      
+
       final port = int.tryParse(portText);
       if (port == null || port <= 0 || port > 65535) {
         _showErrorDialog(localizations.validPortRequired);
         return;
       }
-      
+
       // HTTPS 프로토콜 확인 및 추가
       String finalAddress = address;
-      if (!finalAddress.startsWith('https://') && !finalAddress.startsWith('http://')) {
+      if (!finalAddress.startsWith('https://') &&
+          !finalAddress.startsWith('http://')) {
         finalAddress = 'https://$finalAddress';
       }
-      
+
       ApiConstants.setCustomServer(finalAddress, port);
     } else if (_useDevServer) {
       ApiConstants.useDevEnvironment();
     } else {
       ApiConstants.useProdEnvironment();
     }
-    
+
     await ServerConfig.saveCurrentConfig();
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizations.serverSettingsSaved)),
       );
     }
   }
-  
+
   void _showErrorDialog(String message) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(localizations.error),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(localizations.confirm),
+      builder:
+          (context) => AlertDialog(
+            title: Text(localizations.error),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations.confirm),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-  
+
   void _resetServerSettings() async {
     final localizations = AppLocalizations.of(context)!;
-    
+
     await ServerConfig.resetConfig();
     _loadCurrentServerSettings();
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizations.serverSettingsReset)),
@@ -114,7 +117,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
-    
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -122,18 +125,12 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         children: [
           Text(
             localizations.systemSettings,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Text(
             localizations.systemSettingsDescription,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 24),
           // 언어 설정
@@ -157,7 +154,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // 서버 설정 섹션
           Text(
             localizations.serverSettings,
@@ -177,39 +174,49 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                 children: [
                   // 서버 환경 선택
                   Text(
-                    localizations.selectServerEnvironment, 
-                    style: const TextStyle(fontWeight: FontWeight.bold)
+                    localizations.selectServerEnvironment,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // 개발 서버 옵션
                   RadioListTile<bool>(
                     title: Text(localizations.devServer),
-                    subtitle: Text('${localizations.address}: ${ApiConstants.serverAddress}'),
+                    subtitle: Text(
+                      '${localizations.address}: ${ApiConstants.serverAddress}',
+                    ),
                     value: true,
                     groupValue: _useDevServer,
-                    onChanged: _useCustomServer ? null : (value) {
-                      setState(() {
-                        _useDevServer = value!;
-                      });
-                    },
+                    onChanged:
+                        _useCustomServer
+                            ? null
+                            : (value) {
+                              setState(() {
+                                _useDevServer = value!;
+                              });
+                            },
                   ),
-                  
+
                   // 운영 서버 옵션
                   RadioListTile<bool>(
                     title: Text(localizations.prodServer),
-                    subtitle: Text('${localizations.address}: ${ApiConstants.prodServerAddress}'),
+                    subtitle: Text(
+                      '${localizations.address}: ${ApiConstants.prodServerAddress}',
+                    ),
                     value: false,
                     groupValue: _useDevServer,
-                    onChanged: _useCustomServer ? null : (value) {
-                      setState(() {
-                        _useDevServer = value!;
-                      });
-                    },
+                    onChanged:
+                        _useCustomServer
+                            ? null
+                            : (value) {
+                              setState(() {
+                                _useDevServer = value!;
+                              });
+                            },
                   ),
-                  
+
                   const Divider(),
-                  
+
                   // 사용자 정의 서버 옵션
                   Row(
                     children: [
@@ -224,7 +231,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       Text(localizations.useCustomServer),
                     ],
                   ),
-                  
+
                   // 사용자 정의 서버 설정 필드
                   if (_useCustomServer) ...[
                     const SizedBox(height: 16),
@@ -247,9 +254,9 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
                       keyboardType: TextInputType.number,
                     ),
                   ],
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 버튼 영역
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -278,7 +285,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final currentLocale = localeProvider.locale.languageCode;
     final localizations = AppLocalizations.of(context)!;
-    
+
     return Column(
       children: [
         _buildLanguageOption(
@@ -299,7 +306,7 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
       ],
     );
   }
-  
+
   Widget _buildLanguageOption({
     required BuildContext context,
     required String languageCode,
@@ -313,19 +320,12 @@ class _SystemSettingsPageState extends State<SystemSettingsPage> {
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           children: [
-            Text(
-              languageName,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(languageName, style: const TextStyle(fontSize: 16)),
             const Spacer(),
-            if (isSelected)
-              const Icon(
-                Icons.check,
-                color: Colors.blue,
-              ),
+            if (isSelected) const Icon(Icons.check, color: Colors.blue),
           ],
         ),
       ),
     );
   }
-} 
+}

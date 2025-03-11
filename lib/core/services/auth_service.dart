@@ -11,11 +11,14 @@ class AuthService {
   static Future<void> initAuthData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final levelValue = int.tryParse(prefs.getString('_level') ?? '0') ?? 0;
+
       authData = {
         'db_name': prefs.getString('_db_name') ?? '',
         'login_id': prefs.getString('_login_id') ?? '',
         'role': prefs.getString('_role') ?? '',
         'userseq': prefs.getString('_userseq') ?? '',
+        'level': levelValue.toString(),
       };
     } catch (e) {
       stdout.writeln('인증 데이터 초기화 오류: $e');
@@ -36,6 +39,7 @@ class AuthService {
   static const String _roleKey = '_role';
   static const String _nameKey = '_name';
   static const String _userseqKey = '_userseq';
+  static const String _levelKey = '_level';
 
   /// 사용자 로그인을 처리합니다.
   static Future<Map<String, dynamic>> login(String id, String password) async {
@@ -61,6 +65,7 @@ class AuthService {
             role: userInfo['role'] ?? '',
             name: userInfo['name'] ?? '',
             userseq: userInfo['userseq']?.toString() ?? '',
+            level: int.parse(userInfo['level'] ?? '0'),
           );
 
           // 자동 로그인을 위해 아이디와 비밀번호 저장
@@ -102,6 +107,7 @@ class AuthService {
       'role': prefs.getString(_roleKey) ?? '',
       'name': prefs.getString(_nameKey) ?? '',
       'userseq': prefs.getString(_userseqKey) ?? '',
+      'level': int.tryParse(prefs.getString(_levelKey) ?? '0') ?? 0,
     };
   }
 
@@ -112,6 +118,7 @@ class AuthService {
     required String role,
     required String name,
     required String userseq,
+    required int level,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_loginIdKey, id);
@@ -119,6 +126,7 @@ class AuthService {
     await prefs.setString(_roleKey, role);
     await prefs.setString(_nameKey, name);
     await prefs.setString(_userseqKey, userseq);
+    await prefs.setString(_levelKey, level.toString());
   }
 
   /// 로그아웃 처리를 합니다.
@@ -129,6 +137,7 @@ class AuthService {
     await prefs.remove(_roleKey);
     await prefs.remove(_nameKey);
     await prefs.remove(_userseqKey);
+    await prefs.remove(_levelKey);
 
     // 사용자 이름은 'remember me' 옵션이 켜져 있을 경우 유지
     // await prefs.remove('saved_username');
@@ -144,5 +153,13 @@ class AuthService {
   /// 관리자 권한을 가지고 있는지 확인합니다.
   static Future<bool> isAdmin() async {
     return hasRole('admin');
+  }
+
+  /// 사용자의 권한 레벨을 확인합니다.
+  static Future<bool> hasPermissionLevel(int requiredLevel) async {
+    final prefs = await SharedPreferences.getInstance();
+    final levelStr = prefs.getString(_levelKey);
+    final level = int.tryParse(levelStr ?? '0') ?? 0;
+    return level >= requiredLevel;
   }
 }

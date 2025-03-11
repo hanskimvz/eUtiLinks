@@ -22,16 +22,14 @@ class SubscriberService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'page': 'database',
-          'table': 'subscriber',
+          'action': 'list',
+
           'fields': [],
-          // 'filter': {'\$or': [{'binded': false}, {'binded': null}]},
           'format': 'json',
           ...AuthService.authData,
-          'db': AuthService.authData['db_name'],
         }),
       );
       if (response.statusCode == 200) {
@@ -69,22 +67,19 @@ class SubscriberService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'page': 'database',
-          'table': 'subscriber',
-          'filter': {'meter_id': meterId},
-          // 'fields': ['*'],
+          'action': 'view',
+          'meter_id': meterId,
           'format': 'json',
           ...AuthService.authData,
-          'db': AuthService.authData['db_name'],
         }),
       );
 
       if (response.statusCode == 200) {
         final dynamic data = json.decode(response.body);
-        return SubscriberModel.fromJson(data['data'][0]);
+        return SubscriberModel.fromJson(data['data']);
       } else {
         throw Exception('Failed to load subscriber: ${response.statusCode}');
       }
@@ -101,7 +96,7 @@ class SubscriberService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/subscribers'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({...subscriberData, ...AuthService.authData}),
       );
@@ -125,7 +120,7 @@ class SubscriberService {
       }
 
       final response = await http.put(
-        Uri.parse('$baseUrl/api/subscribers/$subscriberId'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({...subscriberData, ...AuthService.authData}),
       );
@@ -146,7 +141,7 @@ class SubscriberService {
       }
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/subscribers/$subscriberId'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -170,10 +165,11 @@ class SubscriberService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/query'),
+        Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'page': page,
+          'action': 'list',
+
           'format': 'json',
           'fields': fields,
           'filter': filter,

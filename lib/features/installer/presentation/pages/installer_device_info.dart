@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'dart:async';
 import '../../../../core/models/device_model.dart';
 import '../../../../core/services/device_service.dart';
@@ -9,7 +10,6 @@ import '../../../../core/constants/api_constants.dart';
 import '../../../../core/utils/scanner_utils.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 import './installation_confirm_page.dart';
-// import '../../../../core/models/subscriber_model.dart';
 
 class InstallerDeviceInfoPage extends StatefulWidget {
   final String deviceUid;
@@ -57,11 +57,15 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
 
     // 미터기 ID 컨트롤러에 리스너 추가
     _meterIdController.addListener(_onMeterIdChanged);
+
+    // 초기값 컨트롤러에 리스너 추가
+    _initialValueController.addListener(_checkButtonState);
   }
 
   @override
   void dispose() {
     _commentController.dispose();
+    _initialValueController.removeListener(_checkButtonState);
     _initialValueController.dispose();
     _meterIdController.removeListener(_onMeterIdChanged);
     _meterIdController.dispose();
@@ -100,12 +104,24 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
         _subscriberNo = null;
         _address = null;
       });
+      _checkButtonState();
       return;
     }
 
     // 500ms 후에 가입자 정보 조회
     _debounceTimer = Timer(const Duration(milliseconds: 1000), () {
       _fetchCustomerInfo(meterId);
+    });
+
+    // 버튼 상태 확인
+    _checkButtonState();
+  }
+
+  // 버튼 상태 확인 메서드
+  void _checkButtonState() {
+    // setState를 호출하여 버튼 상태 업데이트
+    setState(() {
+      // 상태 변경 없이 리빌드만 트리거
     });
   }
 
@@ -118,6 +134,7 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
         _subscriberNo = null;
         _address = null;
       });
+      _checkButtonState();
       return;
     }
 
@@ -171,6 +188,7 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
           }
         }
         _isLoadingCustomer = false;
+        _checkButtonState();
       });
     } catch (e) {
       // 마운트 상태 확인
@@ -183,6 +201,7 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
         _address = null;
         _isLoadingCustomer = false;
       });
+      _checkButtonState();
 
       // 오류 발생 시 메시지 표시
       if (mounted) {
@@ -303,6 +322,12 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
         _showSnackBar('가입자 정보를 확인하세요.', backgroundColor: Colors.red);
         return;
       }
+    } else {
+      // 비활성 상태(해제)일 때는 미터기 ID만 필수
+      if (_meterIdController.text.isEmpty) {
+        _showSnackBar('미터기 ID를 입력해주세요.', backgroundColor: Colors.red);
+        return;
+      }
     }
 
     // 설치 완료 처리 로직
@@ -311,28 +336,28 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
     });
 
     try {
-      // 설치 정보 업데이트를 위한 데이터 준비
-      final Map<String, dynamic> updateData = {
-        'device_uid': widget.deviceUid,
-        'meter_id': _meterIdController.text,
-        'install_date':
-            _installDate != null
-                ? '${_installDate!.year}-${_installDate!.month.toString().padLeft(2, '0')}-${_installDate!.day.toString().padLeft(2, '0')}'
-                : null,
-        'initial_count':
-            _initialValueController.text.isNotEmpty
-                ? double.tryParse(_initialValueController.text) ?? 0.0
-                : 0.0,
-        'ref_interval': _selectedInterval, // 초 단위
-        'flag': _isActive ? 'active' : 'inactive',
-        'comment': _commentController.text,
+      // API 요청 데이터 준비
+      final Map<String, dynamic> requestData = {
+        'action': _isActive ? 'bind' : 'unbind',
+        'data': {
+          'device_uid': widget.deviceUid,
+          'meter_id': _meterIdController.text,
+          'install_date':
+              _installDate != null
+                  ? '${_installDate!.year.toString()}-${_installDate!.month.toString().padLeft(2, '0')}-${_installDate!.day.toString().padLeft(2, '0')}'
+                  : null,
+          'initial_count':
+              _initialValueController.text.isNotEmpty
+                  ? double.tryParse(_initialValueController.text) ?? 0.0
+                  : 0.0,
+          'ref_interval': _selectedInterval, // 초 단위
+          'comment': _commentController.text,
+        },
       };
+      // print(requestData);
 
-      // 여기에 설치 완료 API 호출 로직 추가
-      await _deviceService.updateDeviceInstallation(updateData);
-
-      // 디버그용 로그 출력
-      // print('설치 정보 업데이트: $updateData');
+      // API 호출
+      await _deviceService.bindDeviceInstallation(requestData);
 
       // 성공 메시지 표시
       if (mounted) {
@@ -944,33 +969,23 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
                       children: [
                         ElevatedButton(
                           onPressed:
-                              _isActive
-                                  ? (_meterIdController.text.isNotEmpty &&
-                                          _initialValueController
-                                              .text
-                                              .isNotEmpty &&
-                                          !_isLoadingCustomer &&
-                                          (_customerName != null ||
-                                              _customerNo != null ||
-                                              _subscriberNo != null))
-                                      ? _completeInstallation
-                                      : null
-                                  : _completeInstallation, // 비활성 상태일 때는 항상 활성화
+                              _isButtonEnabled() ? _completeInstallation : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor:
+                                _isActive ? Colors.green : Colors.orange,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 24,
                               vertical: 12,
                             ),
-                            // 비활성화 상태일 때의 스타일 추가
+                            // 비활성화 상태일 때의 스타일
                             disabledBackgroundColor: Colors.grey.shade300,
                             disabledForegroundColor: Colors.grey.shade600,
                           ),
                           child: Text(
                             _isActive
                                 ? localizations.completeInstallation
-                                : '해제완료',
+                                : localizations.completeUninstallation,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -994,5 +1009,24 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
                 ),
               ),
     );
+  }
+
+  // 버튼 활성화 여부 확인 메서드
+  bool _isButtonEnabled() {
+    if (_isLoadingCustomer) {
+      return false; // 가입자 정보 로딩 중일 때는 비활성화
+    }
+
+    if (_isActive) {
+      // 설치완료 버튼 - 활성 상태일 때
+      return _meterIdController.text.isNotEmpty &&
+          _initialValueController.text.isNotEmpty &&
+          (_customerName != null ||
+              _customerNo != null ||
+              _subscriberNo != null);
+    } else {
+      // 해제완료 버튼 - 비활성 상태일 때
+      return _meterIdController.text.isNotEmpty;
+    }
   }
 }

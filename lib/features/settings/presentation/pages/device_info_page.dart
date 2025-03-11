@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/models/device_model.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
@@ -7,10 +8,7 @@ import '../../../../core/constants/api_constants.dart';
 class DeviceInfoPage extends StatefulWidget {
   final String deviceUid;
 
-  const DeviceInfoPage({
-    super.key,
-    required this.deviceUid,
-  });
+  const DeviceInfoPage({super.key, required this.deviceUid});
 
   @override
   State<DeviceInfoPage> createState() => _DeviceInfoPageState();
@@ -21,7 +19,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
   DeviceModel? _device;
   bool _isLoading = true;
   String _errorMessage = '';
-  
+
   // 컨트롤러 추가
   final TextEditingController _customerNameController = TextEditingController();
   final TextEditingController _customerNoController = TextEditingController();
@@ -30,9 +28,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
   @override
   void initState() {
     super.initState();
-    _deviceService = DeviceService(
-      baseUrl: ApiConstants.serverUrl,
-    );
+    _deviceService = DeviceService(baseUrl: ApiConstants.serverUrl);
     _loadDeviceInfo();
   }
 
@@ -90,7 +86,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
       );
 
       await _deviceService.updateDevice(updatedDevice);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -106,10 +102,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString()),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
       }
     }
@@ -124,29 +117,29 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
             flex: 4,
-            child: readOnly
-                ? Text(value)
-                : TextFormField(
-                    controller: label == '고객명'
-                        ? _customerNameController
-                        : label == '고객번호'
-                            ? _customerNoController
-                            : _meterIdController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+            child:
+                readOnly
+                    ? Text(value)
+                    : TextFormField(
+                      controller:
+                          label == '고객명'
+                              ? _customerNameController
+                              : label == '고객번호'
+                              ? _customerNoController
+                              : _meterIdController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                       ),
                     ),
-                  ),
           ),
         ],
       ),
@@ -157,7 +150,7 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
     if (flag == null || flag.isEmpty) {
       return '알 수 없음';
     }
-    
+
     switch (flag.toLowerCase()) {
       case 'active':
       case 'normal':
@@ -183,17 +176,12 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
 
     if (_errorMessage.isNotEmpty) {
       return Center(
-        child: Text(
-          _errorMessage,
-          style: const TextStyle(color: Colors.red),
-        ),
+        child: Text(_errorMessage, style: const TextStyle(color: Colors.red)),
       );
     }
 
     if (_device == null) {
-      return Center(
-        child: Text(localizations.deviceNotFound),
-      );
+      return Center(child: Text(localizations.deviceNotFound));
     }
 
     return Scaffold(
@@ -220,7 +208,10 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
                     ),
                     const SizedBox(height: 16),
                     _buildInfoRow('단말기 UID', _device!.deviceUid),
-                    _buildInfoRow('마지막 검침', _device!.lastCount?.toString() ?? '-'),
+                    _buildInfoRow(
+                      '마지막 검침',
+                      _device!.lastCount?.toString() ?? '-',
+                    ),
                     _buildInfoRow('마지막 통신', _device!.lastAccess ?? '-'),
                     _buildInfoRow('상태', _getStatusText(_device!.flag)),
                     _buildInfoRow('가동시간', _device!.uptime.toString()),
@@ -245,16 +236,31 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildInfoRow('고객명', _device!.customerName ?? '-', readOnly: false),
-                    _buildInfoRow('고객번호', _device!.customerNo ?? '-', readOnly: false),
-                    _buildInfoRow('미터기 ID', _device!.meterId ?? '-', readOnly: false),
-                    _buildInfoRow('주소', [
-                      _device!.addrProv,
-                      _device!.addrCity,
-                      _device!.addrDist,
-                      _device!.addrDetail,
-                      _device!.addrApt,
-                    ].where((s) => s != null && s.isNotEmpty).join(' ')),
+                    _buildInfoRow(
+                      '고객명',
+                      _device!.customerName ?? '-',
+                      readOnly: false,
+                    ),
+                    _buildInfoRow(
+                      '고객번호',
+                      _device!.customerNo ?? '-',
+                      readOnly: false,
+                    ),
+                    _buildInfoRow(
+                      '미터기 ID',
+                      _device!.meterId ?? '-',
+                      readOnly: false,
+                    ),
+                    _buildInfoRow(
+                      '주소',
+                      [
+                        _device!.addrProv,
+                        _device!.addrCity,
+                        _device!.addrDist,
+                        _device!.addrDetail,
+                        _device!.addrApt,
+                      ].where((s) => s != null && s.isNotEmpty).join(' '),
+                    ),
                   ],
                 ),
               ),
@@ -265,15 +271,14 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
               children: [
                 ElevatedButton(
                   onPressed: _isLoading ? null : _saveDeviceInfo,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(localizations.save),
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Text(localizations.save),
                 ),
                 const SizedBox(width: 16),
                 TextButton(
@@ -289,4 +294,4 @@ class _DeviceInfoPageState extends State<DeviceInfoPage> {
       ),
     );
   }
-} 
+}

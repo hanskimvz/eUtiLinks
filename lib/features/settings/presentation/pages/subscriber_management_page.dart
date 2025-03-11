@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
+import '../../../../l10n/app_localizations.dart';
+import 'package:excel/excel.dart' as excel_lib;
+// import 'package:file_picker/file_picker.dart';
 import 'package:universal_html/html.dart' as html;
-import 'dart:io';
+// import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../../core/models/subscriber_model.dart';
 import '../../../../core/services/subscriber_service.dart';
@@ -135,47 +135,132 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
 
   Future<void> _exportToExcel() async {
     final localizations = AppLocalizations.of(context)!;
+
+    // 웹 환경이 아닌 경우 메시지 표시 후 종료
+    if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('이 기능은 웹 환경에서만 사용 가능합니다.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final excelCustomStyleHead = excel_lib.CellStyle(
+      bold: true,
+      fontColorHex: excel_lib.ExcelColor.fromHexString("#FFFFFF"),
+      backgroundColorHex: excel_lib.ExcelColor.fromHexString("#1E88E5"),
+      horizontalAlign: excel_lib.HorizontalAlign.Center,
+      verticalAlign: excel_lib.VerticalAlign.Center,
+      leftBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      rightBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      bottomBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      topBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+    );
+    final excelCustomStyle = excel_lib.CellStyle(
+      horizontalAlign: excel_lib.HorizontalAlign.Center,
+      verticalAlign: excel_lib.VerticalAlign.Center,
+      leftBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      rightBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      bottomBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+      topBorder: excel_lib.Border(
+        borderStyle: excel_lib.BorderStyle.Thin,
+        borderColorHex: excel_lib.ExcelColor.fromHexString('#0A0A0A'),
+      ),
+    );
+
     try {
       // Excel 파일 생성
-      final excel = Excel.createExcel();
-      final sheet = excel['가입자 목록'];
+      final excel = excel_lib.Excel.createExcel();
 
+      // 기본 시트 사용 (Sheet1)
+      final defaultSheet = excel.sheets.keys.first;
+      final sheet = excel[defaultSheet];
+
+      final widths = [15, 12, 50, 15, 12, 15, 15, 15, 10, 15, 20];
       // 헤더 추가
       sheet.appendRow([
-        TextCellValue('No.'),
-        TextCellValue(localizations.customerName),
-        TextCellValue(localizations.customerNo),
-        TextCellValue(localizations.address),
-        TextCellValue(localizations.shareHouse),
-        TextCellValue(localizations.category),
-        TextCellValue(localizations.subscriberNo),
-        TextCellValue(localizations.meterId),
-        TextCellValue(localizations.subscriberClass),
-        TextCellValue(localizations.inOutdoor),
-        TextCellValue(localizations.bindDeviceId),
-        TextCellValue(localizations.bindDate),
+        excel_lib.TextCellValue(localizations.customerName), // 고객명
+        excel_lib.TextCellValue(localizations.customerNo), // 고객번호
+        excel_lib.TextCellValue(localizations.address), // 주소
+        excel_lib.TextCellValue(localizations.shareHouse), // 공동주택
+        excel_lib.TextCellValue(localizations.category), // 카테고리
+        excel_lib.TextCellValue(localizations.subscriberNo), // 가입자번호
+        excel_lib.TextCellValue(localizations.meterId), // 미터기 ID
+        excel_lib.TextCellValue(localizations.subscriberClass), // 가입자 분류
+        excel_lib.TextCellValue(localizations.inOutdoor), // 실내/실외
+        excel_lib.TextCellValue(localizations.bindDeviceId), // 단말기 ID
+        excel_lib.TextCellValue(localizations.bindDate), // 가입일
       ]);
 
-      // 데이터 추가
-      for (final subscriber in _filteredSubscribers) {
-        sheet.appendRow([
-          TextCellValue(subscriber.subscriberId),
-          TextCellValue(subscriber.customerName ?? ''),
-          TextCellValue(subscriber.customerNo ?? ''),
-          TextCellValue(_getFormattedAddress(subscriber)),
-          TextCellValue(subscriber.shareHouse ?? ''),
-          TextCellValue(subscriber.category ?? ''),
-          TextCellValue(subscriber.subscriberNo ?? ''),
-          TextCellValue(subscriber.meterId ?? ''),
-          TextCellValue(subscriber.subscriberClass ?? ''),
-          TextCellValue(subscriber.inOutdoor ?? ''),
-          TextCellValue(subscriber.bindDeviceId ?? ''),
-          TextCellValue(_getFormattedBindDate(subscriber.bindDate)),
-        ]);
+      // 헤더 행 높이 설정
+      sheet.setRowHeight(0, 20);
+      for (var i = 0; i < widths.length; i++) {
+        sheet.setColumnWidth(i, widths[i].toDouble());
+
+        final cell = sheet.cell(
+          excel_lib.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
+        );
+        cell.cellStyle = excelCustomStyleHead;
       }
 
+      // 데이터 추가
+      for (var i = 0; i < _filteredSubscribers.length; i++) {
+        final subscriber = _filteredSubscribers[i];
+        sheet.appendRow([
+          excel_lib.TextCellValue(subscriber.customerName ?? ''),
+          excel_lib.TextCellValue(subscriber.customerNo ?? ''),
+          excel_lib.TextCellValue(_getFormattedAddress(subscriber)),
+          excel_lib.TextCellValue(subscriber.shareHouse ?? ''),
+          excel_lib.TextCellValue(subscriber.category ?? ''),
+          excel_lib.TextCellValue(subscriber.subscriberNo ?? ''),
+          excel_lib.TextCellValue(subscriber.meterId ?? ''),
+          excel_lib.TextCellValue(subscriber.subscriberClass ?? ''),
+          excel_lib.TextCellValue(subscriber.inOutdoor ?? ''),
+          excel_lib.TextCellValue(subscriber.bindDeviceId ?? ''),
+          excel_lib.TextCellValue(_getFormattedBindDate(subscriber.bindDate)),
+        ]);
+
+        // 각 데이터 행의 높이 설정
+        sheet.setRowHeight(i + 1, 20);
+        for (var j = 0; j < widths.length; j++) {
+          final cell = sheet.cell(
+            excel_lib.CellIndex.indexByColumnRow(
+              columnIndex: j,
+              rowIndex: i + 1,
+            ),
+          );
+          cell.cellStyle = excelCustomStyle;
+        }
+      }
+
+      // 시트 이름 변경 - 파일 저장 직전으로 이동
+      excel.rename(defaultSheet, localizations.subscriberList);
+
       final fileName =
-          '가입자목록_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
+          '${localizations.subscriberList}_${DateTime.now().toString().split('.')[0].replaceAll(':', '-')}.xlsx';
 
       if (kIsWeb) {
         // 웹 환경에서의 다운로드 처리
@@ -192,18 +277,8 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
         html.document.body!.children.remove(anchor);
         html.Url.revokeObjectUrl(url);
       } else {
-        // 데스크톱/모바일 환경에서의 다운로드 처리
-        final result = await FilePicker.platform.saveFile(
-          dialogTitle: '엑셀 파일 저장',
-          fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: ['xlsx'],
-        );
-
-        if (result != null) {
-          final file = File(result);
-          await file.writeAsBytes(excel.encode()!);
-        }
+        // 데스크톱/모바일 환경에서의 다운로드 처리 - 제거
+        // 이 부분은 더 이상 실행되지 않음
       }
 
       if (mounted) {
@@ -400,24 +475,13 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                         child: DataTable(
                                           sortColumnIndex: _sortColumnIndex,
                                           sortAscending: _sortAscending,
-                                          headingRowHeight: 56,
-                                          dataRowMinHeight: 38,
-                                          dataRowMaxHeight: 38,
+                                          headingRowHeight: 36,
+                                          dataRowMinHeight: 36,
+                                          dataRowMaxHeight: 36,
                                           horizontalMargin: 20,
                                           columnSpacing: 30,
                                           showCheckboxColumn: false,
                                           columns: [
-                                            DataColumn(
-                                              label: Text('No.'),
-                                              onSort: (columnIndex, ascending) {
-                                                _sort<String>(
-                                                  (subscriber) =>
-                                                      subscriber.subscriberId,
-                                                  columnIndex,
-                                                  ascending,
-                                                );
-                                              },
-                                            ),
                                             DataColumn(
                                               label: Text(
                                                 localizations.customerName,
@@ -578,18 +642,8 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                               _getPaginatedData().map((
                                                 subscriber,
                                               ) {
-                                                final address =
-                                                    _getFormattedAddress(
-                                                      subscriber,
-                                                    );
-
                                                 return DataRow(
                                                   cells: [
-                                                    DataCell(
-                                                      Text(
-                                                        subscriber.subscriberId,
-                                                      ),
-                                                    ),
                                                     DataCell(
                                                       Text(
                                                         subscriber
@@ -603,7 +657,13 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
                                                             '',
                                                       ),
                                                     ),
-                                                    DataCell(Text(address)),
+                                                    DataCell(
+                                                      Text(
+                                                        _getFormattedAddress(
+                                                          subscriber,
+                                                        ),
+                                                      ),
+                                                    ),
                                                     DataCell(
                                                       Text(
                                                         subscriber.shareHouse ??

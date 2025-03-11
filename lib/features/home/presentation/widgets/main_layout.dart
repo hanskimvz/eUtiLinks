@@ -3,7 +3,8 @@ import 'dart:developer' as developer;
 import '../../../../core/constants/menu_constants.dart';
 import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -73,17 +74,20 @@ class _MainLayoutState extends State<MainLayout> {
 
   void _onMainMenuTap(int index) {
     if (_selectedMainMenuIndex == index) return;
-    
+
     setState(() {
       _selectedMainMenuIndex = index;
       _selectedSubMenuIndex = 0;
       _isMenuOpen = false;
     });
-    
+
     // 페이지 이동 로직
     switch (index) {
       case 0:
-        developer.log('정보관리 탭 클릭: ${AppRouter.infoManagement}', name: 'MainLayout');
+        developer.log(
+          '정보관리 탭 클릭: ${AppRouter.infoManagement}',
+          name: 'MainLayout',
+        );
         Navigator.pushReplacementNamed(context, AppRouter.infoManagement);
         break;
       case 1:
@@ -105,7 +109,7 @@ class _MainLayoutState extends State<MainLayout> {
     setState(() {
       _selectedSubMenuIndex = index;
     });
-    
+
     // 서브메뉴 선택 콜백 호출
     if (widget.onSubMenuSelected != null) {
       widget.onSubMenuSelected!(index);
@@ -123,53 +127,72 @@ class _MainLayoutState extends State<MainLayout> {
     final List<String> subMenuItems = _getSubMenuItems();
     final localizations = AppLocalizations.of(context);
     final bool isMobile = MediaQuery.of(context).size.width < 768;
-    
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false, // 자동 뒤로가기 버튼 제거
-        title: isMobile
-            ? GestureDetector(
-                onTap: _toggleMenu,
-                child: Row(
+        title:
+            isMobile
+                ? GestureDetector(
+                  onTap: _toggleMenu,
+                  child: Row(
+                    children: [
+                      Text(
+                        localizations?.appTitle ?? '세진테크 가스 검침 관리 플랫폼',
+                        style: const TextStyle(
+                          color: AppTheme.brandColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        _isMenuOpen
+                            ? Icons.arrow_drop_up
+                            : Icons.arrow_drop_down,
+                        color: AppTheme.brandColor,
+                      ),
+                    ],
+                  ),
+                )
+                : Row(
                   children: [
+                    // 타이틀
                     Text(
                       localizations?.appTitle ?? '세진테크 가스 검침 관리 플랫폼',
                       style: const TextStyle(
                         color: AppTheme.brandColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontSize: 24,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(
-                      _isMenuOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                      color: AppTheme.brandColor,
+                    // 가운데 정렬을 위한 Spacer
+                    const Spacer(),
+                    // 메뉴 탭
+                    _buildMainMenuTab(
+                      0,
+                      MenuConstants.getInfoManagement(context),
+                    ),
+                    _buildMainMenuTab(1, MenuConstants.getStatistics(context)),
+                    _buildMainMenuTab(2, MenuConstants.getSettings(context)),
+                    _buildMainMenuTab(3, MenuConstants.getInstaller(context)),
+                    // 가운데 정렬을 위한 Spacer
+                    const Spacer(),
+                    // 로그아웃 버튼
+                    TextButton(
+                      onPressed: widget.onLogout,
+                      child: Text(
+                        localizations?.logout ?? '로그아웃',
+                        style: const TextStyle(color: AppTheme.brandColor),
+                      ),
                     ),
                   ],
                 ),
-              )
-            : Row(
-                children: [
-                  // 타이틀
-                  Text(
-                    localizations?.appTitle ?? '세진테크 가스 검침 관리 플랫폼',
-                    style: const TextStyle(
-                      color: AppTheme.brandColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                  // 가운데 정렬을 위한 Spacer
-                  const Spacer(),
-                  // 메뉴 탭
-                  _buildMainMenuTab(0, MenuConstants.getInfoManagement(context)),
-                  _buildMainMenuTab(1, MenuConstants.getStatistics(context)),
-                  _buildMainMenuTab(2, MenuConstants.getSettings(context)),
-                  _buildMainMenuTab(3, MenuConstants.getInstaller(context)),
-                  // 가운데 정렬을 위한 Spacer
-                  const Spacer(),
-                  // 로그아웃 버튼
+        titleSpacing: 16,
+        actions:
+            isMobile
+                ? [
                   TextButton(
                     onPressed: widget.onLogout,
                     child: Text(
@@ -177,20 +200,8 @@ class _MainLayoutState extends State<MainLayout> {
                       style: const TextStyle(color: AppTheme.brandColor),
                     ),
                   ),
-                ],
-              ),
-        titleSpacing: 16,
-        actions: isMobile
-            ? [
-                TextButton(
-                  onPressed: widget.onLogout,
-                  child: Text(
-                    localizations?.logout ?? '로그아웃',
-                    style: const TextStyle(color: AppTheme.brandColor),
-                  ),
-                ),
-              ]
-            : null,
+                ]
+                : null,
       ),
       body: Column(
         children: [
@@ -200,10 +211,22 @@ class _MainLayoutState extends State<MainLayout> {
               color: Colors.white,
               child: Column(
                 children: [
-                  _buildMobileMainMenuTab(0, MenuConstants.getInfoManagement(context)),
-                  _buildMobileMainMenuTab(1, MenuConstants.getStatistics(context)),
-                  _buildMobileMainMenuTab(2, MenuConstants.getSettings(context)),
-                  _buildMobileMainMenuTab(3, MenuConstants.getInstaller(context)),
+                  _buildMobileMainMenuTab(
+                    0,
+                    MenuConstants.getInfoManagement(context),
+                  ),
+                  _buildMobileMainMenuTab(
+                    1,
+                    MenuConstants.getStatistics(context),
+                  ),
+                  _buildMobileMainMenuTab(
+                    2,
+                    MenuConstants.getSettings(context),
+                  ),
+                  _buildMobileMainMenuTab(
+                    3,
+                    MenuConstants.getInstaller(context),
+                  ),
                 ],
               ),
             ),
@@ -235,7 +258,10 @@ class _MainLayoutState extends State<MainLayout> {
                             itemCount: subMenuItems.length,
                             itemBuilder: (context, index) {
                               return ListTile(
-                                contentPadding: const EdgeInsets.only(left: 20.0, right: 16.0), // 왼쪽에 5픽셀 추가 여백
+                                contentPadding: const EdgeInsets.only(
+                                  left: 20.0,
+                                  right: 16.0,
+                                ), // 왼쪽에 5픽셀 추가 여백
                                 title: Text(subMenuItems[index]),
                                 selected: _selectedSubMenuIndex == index,
                                 selectedTileColor: Colors.grey[200],
@@ -265,7 +291,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildMainMenuTab(int index, String title) {
     final bool isSelected = _selectedMainMenuIndex == index;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: TextButton(
@@ -287,7 +313,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _buildMobileMainMenuTab(int index, String title) {
     final bool isSelected = _selectedMainMenuIndex == index;
-    
+
     return InkWell(
       onTap: () => _onMainMenuTap(index),
       child: Container(
@@ -305,4 +331,4 @@ class _MainLayoutState extends State<MainLayout> {
       ),
     );
   }
-} 
+}

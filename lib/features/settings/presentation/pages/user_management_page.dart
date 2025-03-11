@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+// import 'dart:convert';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/user_service.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -16,18 +17,22 @@ class UserManagementPage extends StatefulWidget {
 class _UserManagementPageState extends State<UserManagementPage> {
   final List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _filteredUsers = [];
+  final List<Map<String, dynamic>> _pendingUsers = [];
   bool _isLoading = false;
   String _errorMessage = '';
+  late UserService _userService;
 
   @override
   void initState() {
     super.initState();
+    _userService = UserService(baseUrl: ApiConstants.serverAddress);
     _loadData();
   }
 
   Future<void> _loadData() async {
     await AuthService.initAuthData();
     _fetchUsers();
+    _fetchPendingUsers();
   }
 
   // 서버에서 사용자 목록을 가져오는 함수
@@ -38,72 +43,41 @@ class _UserManagementPageState extends State<UserManagementPage> {
     });
 
     try {
-      final tableHead = [
-        'code',
-        'ID',
-        'email',
-        'name',
-        'lang',
-        'role',
-        'groups',
-        'regdate',
-        'flag',
-      ];
+      final users = await _userService.getUsers();
 
-      final response = await http.post(
-        Uri.parse('${ApiConstants.serverAddress}/api/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': 'users',
-          'format': 'json',
-          'fields': tableHead,
-          ...AuthService.authData,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['code'] == 200) {
-          setState(() {
-            _users.clear();
-
-            // 서버에서 받은 사용자 데이터를 처리
-            if (data['data'] != null && data['data'] is List) {
-              for (var user in data['data']) {
-                _users.add({
-                  'id': user['code'] ?? '',
-                  'username': user['ID'] ?? '',
-                  'name': user['name'] ?? '',
-                  'email': user['email'] ?? '',
-                  'role': user['role'] ?? '',
-                  'lastLogin': user['regdate'] ?? '-',
-                  'status': user['flag'] == true ? 'active' : 'inactive',
-                  'lang': user['lang'] ?? 'kor',
-                });
-              }
-            }
-
-            _filteredUsers = List.from(_users);
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _errorMessage = '사용자 데이터를 가져오는데 실패했습니다. 코드: ${data['code']}';
-            _isLoading = false;
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage = '서버 응답 오류: ${response.statusCode}';
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _users.clear();
+        _users.addAll(users);
+        _filteredUsers = List.from(_users);
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = '오류 발생: $e';
+        _errorMessage = e.toString();
         _isLoading = false;
-        // print(e);
+      });
+    }
+  }
+
+  // 미승인 사용자 목록을 가져오는 함수
+  Future<void> _fetchPendingUsers() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final pendingUsers = await _userService.getPendingUsers();
+
+      setState(() {
+        _pendingUsers.clear();
+        _pendingUsers.addAll(pendingUsers);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
       });
     }
   }
@@ -111,46 +85,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
   // 사용자 추가 API 호출
   Future<bool> _addUser(Map<String, dynamic> userData) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.serverAddress}/api/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': 'users',
-          'action': 'add',
-          'format': 'json',
-          ...AuthService.authData,
-          'data': {
-            'ID': userData['username'],
-            'name': userData['name'],
-            'email': userData['email'],
-            'password': userData['password'],
-            'role': userData['role'],
-            'lang': userData['lang'],
-            'flag': userData['status'] == '활성',
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['code'] == 200) {
-          return true;
-        } else {
-          setState(() {
-            _errorMessage = '사용자 추가에 실패했습니다. 코드: ${data['code']}';
-          });
-          return false;
-        }
-      } else {
-        setState(() {
-          _errorMessage = '서버 응답 오류: ${response.statusCode}';
-        });
-        return false;
-      }
+      return await _userService.addUser(userData);
     } catch (e) {
       setState(() {
-        _errorMessage = '오류 발생: $e';
+        _errorMessage = e.toString();
       });
       return false;
     }
@@ -159,122 +97,34 @@ class _UserManagementPageState extends State<UserManagementPage> {
   // 사용자 수정 API 호출
   Future<bool> _updateUser(Map<String, dynamic> userData) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.serverAddress}/api/update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': 'users',
-          'format': 'json',
-          ...AuthService.authData,
-          'code': userData['id'],
-          'ID': userData['username'],
-          'name': userData['name'],
-          'email': userData['email'],
-          'user_role': userData['role'],
-          'lang': userData['lang'] ?? 'kor',
-          'groups': userData['groups'] ?? '',
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['code'] == 200) {
-          return true;
-        } else {
-          setState(() {
-            _errorMessage = '사용자 수정에 실패했습니다. 코드: ${data['code']}';
-          });
-          return false;
-        }
-      } else {
-        setState(() {
-          _errorMessage = '서버 응답 오류: ${response.statusCode}';
-        });
-        return false;
-      }
+      return await _userService.updateUser(userData);
     } catch (e) {
       setState(() {
-        _errorMessage = '오류 발생: $e';
+        _errorMessage = e.toString();
       });
       return false;
     }
   }
 
   // 사용자 삭제 API 호출
-  Future<bool> _deleteUser(String userCode) async {
+  Future<bool> _deleteUser(String userCode, String userID) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.serverAddress}/api/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': 'users',
-          'action': 'delete',
-          'format': 'json',
-          ...AuthService.authData,
-          'data': {'code': userCode},
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['code'] == 200) {
-          return true;
-        } else {
-          setState(() {
-            _errorMessage = '사용자 삭제에 실패했습니다. 코드: ${data['code']}';
-          });
-          return false;
-        }
-      } else {
-        setState(() {
-          _errorMessage = '서버 응답 오류: ${response.statusCode}';
-        });
-        return false;
-      }
+      return await _userService.deleteUser(userCode, userID);
     } catch (e) {
       setState(() {
-        _errorMessage = '오류 발생: $e';
+        _errorMessage = e.toString();
       });
       return false;
     }
   }
 
-  // 사용자 상태 변경 API 호출
-  Future<bool> _toggleUserStatusOnServer(Map<String, dynamic> userData) async {
+  // 사용자 승인 API 호출
+  Future<bool> _approveUser(Map<String, dynamic> userData) async {
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.serverAddress}/api/query'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'page': 'users',
-          'action': 'update_status',
-          'format': 'json',
-          ...AuthService.authData,
-          'data': {'code': userData['id'], 'flag': userData['status'] == '활성'},
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['code'] == 200) {
-          return true;
-        } else {
-          setState(() {
-            _errorMessage = '사용자 상태 변경에 실패했습니다. 코드: ${data['code']}';
-          });
-          return false;
-        }
-      } else {
-        setState(() {
-          _errorMessage = '서버 응답 오류: ${response.statusCode}';
-        });
-        return false;
-      }
+      return await _userService.approveUser(userData);
     } catch (e) {
       setState(() {
-        _errorMessage = '오류 발생: $e';
+        _errorMessage = e.toString();
       });
       return false;
     }
@@ -385,6 +235,30 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   alignment: Alignment.center,
                 ),
               ),
+              const SizedBox(width: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  _fetchPendingUsers();
+                  _showPendingUsersDialog();
+                },
+                icon: const Icon(Icons.approval, color: Colors.white, size: 20),
+                label: Text(
+                  localizations.pendingUserApproval,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  alignment: Alignment.center,
+                ),
+              ),
             ],
           ),
           if (_errorMessage.isNotEmpty)
@@ -409,233 +283,225 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   Widget _buildUserTable(AppLocalizations localizations) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        child: DataTable(
-          columns: [
-            DataColumn(
-              label: Text(
-                localizations.code,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                "ID",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.email,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.language,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.role,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.registrationDate,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.status,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                localizations.actions,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-          rows:
-              _filteredUsers.map((user) {
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      Text(
-                        user['id'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: DataTable(
+                columnSpacing: 16,
+                horizontalMargin: 16,
+                columns: [
+                  DataColumn(
+                    label: Text(
+                      localizations.code,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        user['username'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      "ID",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        user['name'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        user['email'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.email,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        _getLanguageName(user['lang'], localizations),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.language,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        _getRoleName(user['role'], localizations),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.role,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Text(
-                        user['lastLogin'],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.registrationDate,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              user['status'] == 'active'
-                                  ? Colors.green[100]
-                                  : Colors.red[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          user['status'],
-                          style: TextStyle(
-                            color:
-                                user['status'] == 'active'
-                                    ? Colors.green[800]
-                                    : Colors.red[800],
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                          ),
-                        ),
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.status,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit,
-                              color: Colors.blue,
-                              size: 22,
+                  ),
+                  DataColumn(
+                    label: Text(
+                      localizations.actions,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+                rows:
+                    _filteredUsers.map((user) {
+                      return DataRow(
+                        cells: [
+                          DataCell(
+                            Text(
+                              user['id'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                             ),
-                            onPressed: () => _showEditUserDialog(user),
-                            tooltip: localizations.edit,
                           ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                              size: 22,
+                          DataCell(
+                            Text(
+                              user['username'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                             ),
-                            onPressed: () => _showDeleteUserDialog(user),
-                            tooltip: localizations.delete,
                           ),
-                          IconButton(
-                            icon: Icon(
-                              user['status'] == 'active'
-                                  ? Icons.block
-                                  : Icons.check_circle,
-                              color:
-                                  user['status'] == 'active'
-                                      ? Colors.orange
-                                      : Colors.green,
-                              size: 22,
+                          DataCell(
+                            Text(
+                              user['name'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                             ),
-                            onPressed: () => _toggleUserStatus(user),
-                            tooltip:
-                                user['status'] == 'active'
-                                    ? localizations.deactivate
-                                    : localizations.activate,
+                          ),
+                          DataCell(
+                            Text(
+                              user['email'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              _getLanguageName(user['lang'], localizations),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              _getRoleName(user['role'], localizations),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Text(
+                              user['lastLogin'],
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    user['status'] == 'active'
+                                        ? Colors.green[100]
+                                        : Colors.red[100],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                user['status'],
+                                style: TextStyle(
+                                  color:
+                                      user['status'] == 'active'
+                                          ? Colors.green[800]
+                                          : Colors.red[800],
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blue,
+                                    size: 22,
+                                  ),
+                                  onPressed: () => _showEditUserDialog(user),
+                                  tooltip: localizations.edit,
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                    size: 22,
+                                  ),
+                                  onPressed: () => _showDeleteUserDialog(user),
+                                  tooltip: localizations.delete,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-        ),
-      ),
+                      );
+                    }).toList(),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -662,6 +528,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         return localizations.user;
       case 'installer':
         return localizations.installer;
+      case 'guest':
+        return 'Guest';
       default:
         return role;
     }
@@ -675,165 +543,263 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final passwordController = TextEditingController();
     String selectedRole = 'user';
     String selectedLang = 'kor';
+    bool isActive = true;
 
+    // 유효성 검사 상태를 저장할 변수들
+    final Map<String, String> errors = {
+      'username': '',
+      'name': '',
+      'email': '',
+      'password': '',
+    };
+
+    // StatefulBuilder를 사용하여 다이얼로그 내부 상태 관리
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(localizations.addUser),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: usernameController,
-                    decoration: InputDecoration(
-                      labelText: localizations.username,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: localizations.name,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: localizations.email,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: passwordController,
-                    decoration: InputDecoration(
-                      labelText: localizations.password,
-                      border: const OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: localizations.role,
-                      border: const OutlineInputBorder(),
-                    ),
-                    value: selectedRole,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'admin',
-                        child: Text(localizations.admin),
-                      ),
-                      DropdownMenuItem(
-                        value: 'operator',
-                        child: Text(localizations.operator),
-                      ),
-                      DropdownMenuItem(
-                        value: 'user',
-                        child: Text(localizations.user),
-                      ),
-                      DropdownMenuItem(
-                        value: 'installer',
-                        child: Text(localizations.installer),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      selectedRole = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: localizations.language,
-                      border: const OutlineInputBorder(),
-                    ),
-                    value: selectedLang,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'kor',
-                        child: Text(localizations.korean),
-                      ),
-                      DropdownMenuItem(
-                        value: 'eng',
-                        child: Text(localizations.english),
-                      ),
-                      DropdownMenuItem(
-                        value: 'chn',
-                        child: Text(localizations.chinese),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      selectedLang = value!;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(localizations.cancel),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (usernameController.text.isNotEmpty &&
-                      nameController.text.isNotEmpty) {
-                    final userData = {
-                      'username': usernameController.text,
-                      'name': nameController.text,
-                      'email': emailController.text,
-                      'password': passwordController.text,
-                      'role': selectedRole,
-                      'lang': selectedLang,
-                      'status': 'active',
-                    };
-
-                    final messenger = ScaffoldMessenger.of(context);
-                    final userAddedMessage = localizations.userAdded;
-
-                    Navigator.of(context).pop();
-
-                    // 로딩 표시
-                    setState(() {
-                      _isLoading = true;
-                      _errorMessage = '';
-                    });
-
-                    // 서버에 사용자 추가 요청
-                    final success = await _addUser(userData);
-
-                    if (success) {
-                      // 성공 시 사용자 목록 새로고침
-                      await _fetchUsers();
-
-                      if (mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(userAddedMessage),
-                            backgroundColor: Colors.green,
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: Text(localizations.addUser),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: usernameController,
+                          decoration: InputDecoration(
+                            labelText: localizations.username,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['username']!.isNotEmpty
+                                    ? errors['username']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
                           ),
-                        );
-                      }
-                    } else {
-                      if (mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(_errorMessage),
-                            backgroundColor: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: localizations.name,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['name']!.isNotEmpty
+                                    ? errors['name']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
                           ),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: Text('추가'),
-              ),
-            ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: emailController,
+                          decoration: InputDecoration(
+                            labelText: localizations.email,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['email']!.isNotEmpty
+                                    ? errors['email']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: passwordController,
+                          decoration: InputDecoration(
+                            labelText: localizations.password,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['password']!.isNotEmpty
+                                    ? errors['password']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: localizations.role,
+                            border: const OutlineInputBorder(),
+                          ),
+                          value: selectedRole,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'admin',
+                              child: Text(localizations.admin),
+                            ),
+                            DropdownMenuItem(
+                              value: 'operator',
+                              child: Text(localizations.operator),
+                            ),
+                            DropdownMenuItem(
+                              value: 'installer',
+                              child: Text(localizations.installer),
+                            ),
+                            DropdownMenuItem(
+                              value: 'user',
+                              child: Text(localizations.user),
+                            ),
+                            DropdownMenuItem(
+                              value: 'guest',
+                              child: Text('Guest'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedRole = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: localizations.language,
+                            border: const OutlineInputBorder(),
+                          ),
+                          value: selectedLang,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'kor',
+                              child: Text(localizations.korean),
+                            ),
+                            DropdownMenuItem(
+                              value: 'eng',
+                              child: Text(localizations.english),
+                            ),
+                            DropdownMenuItem(
+                              value: 'chn',
+                              child: Text(localizations.chinese),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedLang = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: Text(localizations.activationStatus),
+                          value: isActive,
+                          onChanged: (value) {
+                            setState(() {
+                              isActive = value;
+                            });
+                          },
+                          activeColor: Colors.green,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(localizations.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        // 유효성 검사 수행
+                        bool isValid = true;
+                        final newErrors = Map<String, String>.from(errors);
+
+                        if (usernameController.text.isEmpty) {
+                          newErrors['username'] = '사용자 ID를 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['username'] = '';
+                        }
+
+                        if (nameController.text.isEmpty) {
+                          newErrors['name'] = '이름을 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['name'] = '';
+                        }
+
+                        if (emailController.text.isEmpty) {
+                          newErrors['email'] = '이메일을 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['email'] = '';
+                        }
+
+                        if (passwordController.text.isEmpty) {
+                          newErrors['password'] = '비밀번호를 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['password'] = '';
+                        }
+
+                        // 오류가 있으면 상태 업데이트
+                        if (!isValid) {
+                          setState(() {
+                            errors.addAll(newErrors);
+                          });
+                          return;
+                        }
+
+                        final userData = {
+                          'username': usernameController.text,
+                          'name': nameController.text,
+                          'email': emailController.text,
+                          'password': passwordController.text,
+                          'role': selectedRole,
+                          'lang': selectedLang,
+                          'status': isActive ? 'active' : 'inactive',
+                        };
+
+                        final messenger = ScaffoldMessenger.of(context);
+                        final userAddedMessage = localizations.userAdded;
+
+                        Navigator.of(context).pop();
+
+                        // 로딩 표시
+                        this.setState(() {
+                          _isLoading = true;
+                          _errorMessage = '';
+                        });
+
+                        // 서버에 사용자 추가 요청
+                        final success = await _addUser(userData);
+
+                        if (success) {
+                          // 성공 시 사용자 목록 새로고침
+                          await _fetchUsers();
+
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(userAddedMessage),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(_errorMessage),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: Text(localizations.save),
+                    ),
+                  ],
+                ),
           ),
     );
   }
@@ -843,154 +809,242 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final usernameController = TextEditingController(text: user['username']);
     final nameController = TextEditingController(text: user['name']);
     final emailController = TextEditingController(text: user['email']);
-    String selectedRole = user['role'];
+    final commentController = TextEditingController(
+      text: user['comment'] ?? '',
+    );
+    String selectedRole =
+        (user['role'] == null || user['role'] == '') ? 'user' : user['role'];
     String selectedLang = user['lang'] ?? 'kor';
+    bool isActive = user['status'] == 'active';
+
+    // 유효성 검사 상태를 저장할 변수들
+    final Map<String, String> errors = {'name': '', 'email': '', 'comment': ''};
 
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text(localizations.editUser),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: usernameController,
-                    decoration: InputDecoration(
-                      labelText: localizations.username,
-                      border: const OutlineInputBorder(),
-                    ),
-                    enabled: false, // 사용자 ID는 수정 불가
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: localizations.name,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: emailController,
-                    decoration: InputDecoration(
-                      labelText: localizations.email,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: localizations.role,
-                      border: const OutlineInputBorder(),
-                    ),
-                    value: selectedRole,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'admin',
-                        child: Text(localizations.admin),
-                      ),
-                      DropdownMenuItem(
-                        value: 'operator',
-                        child: Text(localizations.operator),
-                      ),
-                      DropdownMenuItem(
-                        value: 'user',
-                        child: Text(localizations.user),
-                      ),
-                      DropdownMenuItem(
-                        value: 'installer',
-                        child: Text(localizations.installer),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      selectedRole = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: localizations.language,
-                      border: const OutlineInputBorder(),
-                    ),
-                    value: selectedLang,
-                    items: [
-                      DropdownMenuItem(
-                        value: 'kor',
-                        child: Text(localizations.korean),
-                      ),
-                      DropdownMenuItem(
-                        value: 'eng',
-                        child: Text(localizations.english),
-                      ),
-                      DropdownMenuItem(
-                        value: 'chn',
-                        child: Text(localizations.chinese),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      selectedLang = value!;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(localizations.cancel),
-              ),
-              TextButton(
-                onPressed: () async {
-                  if (nameController.text.isNotEmpty) {
-                    final userData = {
-                      'id': user['id'],
-                      'username': usernameController.text,
-                      'name': nameController.text,
-                      'email': emailController.text,
-                      'role': selectedRole,
-                      'lang': selectedLang,
-                    };
-
-                    final messenger = ScaffoldMessenger.of(context);
-                    final editSuccessMessage = localizations.userEditedSuccess;
-
-                    Navigator.of(context).pop();
-
-                    setState(() {
-                      _isLoading = true;
-                      _errorMessage = '';
-                    });
-
-                    final success = await _updateUser(userData);
-
-                    if (success) {
-                      await _fetchUsers();
-
-                      if (mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(editSuccessMessage),
-                            backgroundColor: Colors.green,
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: Text(localizations.editUser),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: usernameController,
+                          decoration: InputDecoration(
+                            labelText: localizations.username,
+                            border: const OutlineInputBorder(),
                           ),
-                        );
-                      }
-                    } else {
-                      if (mounted) {
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(_errorMessage),
-                            backgroundColor: Colors.red,
+                          enabled: false, // 사용자 ID는 수정 불가
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: nameController,
+                          decoration: InputDecoration(
+                            labelText: localizations.name,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['name']!.isNotEmpty
+                                    ? errors['name']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
                           ),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: Text(localizations.save),
-              ),
-            ],
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: emailController,
+                          decoration: InputDecoration(
+                            labelText: localizations.email,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['email']!.isNotEmpty
+                                    ? errors['email']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: commentController,
+                          decoration: InputDecoration(
+                            labelText: localizations.comment,
+                            border: const OutlineInputBorder(),
+                            errorText:
+                                errors['comment']!.isNotEmpty
+                                    ? errors['comment']
+                                    : null,
+                            errorBorder: const OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.red),
+                            ),
+                          ),
+                          // maxLines: 3,
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: localizations.role,
+                            border: const OutlineInputBorder(),
+                          ),
+                          value: selectedRole,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'admin',
+                              child: Text(localizations.admin),
+                            ),
+                            DropdownMenuItem(
+                              value: 'operator',
+                              child: Text(localizations.operator),
+                            ),
+                            DropdownMenuItem(
+                              value: 'installer',
+                              child: Text(localizations.installer),
+                            ),
+                            DropdownMenuItem(
+                              value: 'user',
+                              child: Text(localizations.user),
+                            ),
+                            DropdownMenuItem(
+                              value: 'guest',
+                              child: Text('Guest'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedRole = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: localizations.language,
+                            border: const OutlineInputBorder(),
+                          ),
+                          value: selectedLang,
+                          items: [
+                            DropdownMenuItem(
+                              value: 'kor',
+                              child: Text(localizations.korean),
+                            ),
+                            DropdownMenuItem(
+                              value: 'eng',
+                              child: Text(localizations.english),
+                            ),
+                            DropdownMenuItem(
+                              value: 'chn',
+                              child: Text(localizations.chinese),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              selectedLang = value!;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: Text(localizations.activationStatus),
+                          value: isActive,
+                          onChanged: (value) {
+                            setState(() {
+                              isActive = value;
+                            });
+                          },
+                          activeColor: Colors.green,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(localizations.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        // 유효성 검사 수행
+                        bool isValid = true;
+                        final newErrors = Map<String, String>.from(errors);
+
+                        if (nameController.text.isEmpty) {
+                          newErrors['name'] = '이름을 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['name'] = '';
+                        }
+
+                        if (emailController.text.isEmpty) {
+                          newErrors['email'] = '이메일을 입력해주세요';
+                          isValid = false;
+                        } else {
+                          newErrors['email'] = '';
+                        }
+
+                        // 오류가 있으면 상태 업데이트
+                        if (!isValid) {
+                          setState(() {
+                            errors.addAll(newErrors);
+                          });
+                          return;
+                        }
+
+                        final userData = {
+                          'id': user['id'],
+                          'username': usernameController.text,
+                          'name': nameController.text,
+                          'email': emailController.text,
+                          'role': selectedRole,
+                          'lang': selectedLang,
+                          'status': isActive ? 'active' : 'inactive',
+                          'comment': commentController.text,
+                        };
+
+                        final messenger = ScaffoldMessenger.of(context);
+                        final editSuccessMessage =
+                            localizations.userEditedSuccess;
+
+                        Navigator.of(context).pop();
+
+                        this.setState(() {
+                          _isLoading = true;
+                          _errorMessage = '';
+                        });
+
+                        final success = await _updateUser(userData);
+
+                        if (success) {
+                          await _fetchUsers();
+
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(editSuccessMessage),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(_errorMessage),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: Text(localizations.save),
+                    ),
+                  ],
+                ),
           ),
     );
   }
@@ -1020,7 +1074,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     _errorMessage = '';
                   });
 
-                  final success = await _deleteUser(user['id']);
+                  final success = await _deleteUser(
+                    user['id'],
+                    user['username'],
+                  );
 
                   if (success) {
                     await _fetchUsers();
@@ -1054,41 +1111,180 @@ class _UserManagementPageState extends State<UserManagementPage> {
     );
   }
 
-  void _toggleUserStatus(Map<String, dynamic> user) async {
-    // 상태 변경
-    final newStatus = user['status'] == 'active' ? '비활성' : '활성';
+  // 미승인 사용자 목록 다이얼로그
+  void _showPendingUsersDialog() {
+    final localizations = AppLocalizations.of(context)!;
 
-    // 로딩 표시
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-
-    // 서버에 상태 변경 요청
-    final userData = {'id': user['id'], 'status': newStatus};
-
-    final success = await _toggleUserStatusOnServer(userData);
-
-    if (success) {
-      // 성공 시 사용자 목록 새로고침
-      await _fetchUsers();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${user['name']} 사용자가 ${newStatus == '활성' ? '활성화' : '비활성화'}되었습니다.',
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text(localizations.pendingUserApproval),
+            content: SizedBox(
+              // width: MediaQuery.of(context).size.width * 0.5,
+              width: 492,
+              height: MediaQuery.of(context).size.height * 0.6,
+              child:
+                  _pendingUsers.isEmpty
+                      ? Center(child: Text(localizations.noPendingUsers))
+                      : SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (var user in _pendingUsers)
+                              Card(
+                                margin: const EdgeInsets.only(bottom: 16),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '${localizations.registrationDate}: ${user['regdate']}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          Text(
+                                            'ID: ${user['username']}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        '${localizations.name}: ${user['name']}',
+                                      ),
+                                      Text(
+                                        '${localizations.email}: ${user['email']}',
+                                      ),
+                                      if (user['comment'] != null &&
+                                          user['comment'].isNotEmpty)
+                                        Text(
+                                          '${localizations.comment}: ${user['comment']}',
+                                        ),
+                                      const SizedBox(height: 16),
+                                      _buildApprovalForm(user),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
             ),
-            backgroundColor: newStatus == '활성' ? Colors.green : Colors.orange,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(localizations.cancel),
+              ),
+            ],
           ),
-        );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage), backgroundColor: Colors.red),
-        );
-      }
-    }
+    );
+  }
+
+  // 승인 폼 위젯
+  Widget _buildApprovalForm(Map<String, dynamic> user) {
+    final localizations = AppLocalizations.of(context)!;
+    final dbNameController = TextEditingController();
+    bool isActive = true;
+
+    return StatefulBuilder(
+      builder:
+          (context, setState) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: dbNameController,
+                decoration: InputDecoration(
+                  labelText: localizations.dbName,
+                  border: const OutlineInputBorder(),
+                  hintText: localizations.enterUserDbName,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: Text(localizations.activationStatus),
+                value: isActive,
+                onChanged: (value) {
+                  setState(() {
+                    isActive = value;
+                  });
+                },
+                activeColor: Colors.green,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final userData = {
+                      'id': user['id'],
+                      'username': user['username'],
+                      'db_name': dbNameController.text,
+                      'flag': isActive,
+                    };
+
+                    // 비동기 작업 전에 context와 localizations 저장
+                    final currentContext = context;
+
+                    final success = await _approveUser(userData);
+
+                    if (success) {
+                      // 성공 시 목록 새로고침
+                      await _fetchPendingUsers();
+                      await _fetchUsers();
+
+                      if (mounted && currentContext.mounted) {
+                        ScaffoldMessenger.of(currentContext).showSnackBar(
+                          SnackBar(
+                            content: Text(localizations.userApproved),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        // 현재 카드 제거
+                        setState(() {
+                          _pendingUsers.removeWhere(
+                            (item) => item['id'] == user['id'],
+                          );
+                        });
+
+                        // 모든 미승인 사용자가 처리되었으면 다이얼로그 닫기
+                        if (_pendingUsers.isEmpty) {
+                          Navigator.of(currentContext).pop();
+                        }
+                      }
+                    } else {
+                      if (mounted && currentContext.mounted) {
+                        ScaffoldMessenger.of(currentContext).showSnackBar(
+                          SnackBar(
+                            content: Text(_errorMessage),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(localizations.approve),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 }

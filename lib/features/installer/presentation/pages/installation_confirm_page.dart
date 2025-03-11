@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
-import '../pages/installer_device_info.dart';
-import '../../../../core/models/device_model.dart';
+// import '../pages/installer_device_info.dart';
+// import '../../../../core/models/device_model.dart';
 
 class InstallationConfirmPage extends StatefulWidget {
   final String deviceUid;
@@ -31,11 +32,6 @@ class _InstallationConfirmPageState extends State<InstallationConfirmPage> {
   void initState() {
     super.initState();
     _deviceService = DeviceService(baseUrl: ApiConstants.serverUrl);
-
-    // 페이지 로드 후 10초 후에 통신 시작
-    setState(() {
-      _statusMessage = '$_countdown초 후 통신을 시작합니다...';
-    });
 
     // 카운트다운 타이머 시작
     _startCountdown();
@@ -172,19 +168,22 @@ class _InstallationConfirmPageState extends State<InstallationConfirmPage> {
       final device = devices.first;
 
       // 새로운 DeviceModel 객체 생성 (flag를 'inactive'로 설정)
-      final updatedDevice = DeviceModel(
-        deviceUid: device.deviceUid,
-        flag: 'inactive', // 비활성 상태로 설정
-        customerName: device.customerName,
-        customerNo: device.customerNo,
-        meterId: device.meterId,
-        refInterval: device.refInterval,
-      );
+      final requestData = {
+        'action': 'unbind',
+        'data': {
+          'device_uid': device.deviceUid,
+          'meter_id': device.meterId,
+          'customer_name': device.customerName,
+          'customer_no': device.customerNo,
+        },
+      };
 
       // 서버에 장비 연결 해제 요청
-      final result = await _deviceService.updateDevice(updatedDevice);
+      // final result = await _deviceService.updateDevice(updatedDevice);
+      await _deviceService.bindDeviceInstallation(requestData);
 
-      return result != null;
+      // 결과가 존재하면 성공
+      return true;
     } catch (e) {
       if (!mounted) return false;
 
@@ -376,6 +375,8 @@ class _InstallationConfirmPageState extends State<InstallationConfirmPage> {
 
                     // 장비 연결 해제 시도
                     final localizations = AppLocalizations.of(context)!;
+                    final navigatorContext = Navigator.of(context);
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
                     // 로딩 표시
                     showDialog(
@@ -398,12 +399,12 @@ class _InstallationConfirmPageState extends State<InstallationConfirmPage> {
 
                     // 로딩 다이얼로그 닫기
                     if (mounted) {
-                      Navigator.of(context).pop();
+                      navigatorContext.pop();
                     }
 
                     if (success && mounted) {
                       // 성공 메시지 표시
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         SnackBar(
                           content: Text(
                             localizations.deviceDisconnectedSuccessfully,
@@ -413,7 +414,7 @@ class _InstallationConfirmPageState extends State<InstallationConfirmPage> {
                       );
 
                       // 장비 리스트 페이지로 이동
-                      Navigator.of(context).pushReplacementNamed('/installer');
+                      navigatorContext.pushReplacementNamed('/installer');
                     }
                   },
                   style: ElevatedButton.styleFrom(

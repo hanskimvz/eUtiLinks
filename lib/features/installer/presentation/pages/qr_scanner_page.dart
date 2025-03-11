@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class QRScannerPage extends StatefulWidget {
   /// 스캔 결과에 대한 힌트 텍스트 (선택 사항)
   final String? hintText;
-  
+
   /// 스캔 후 자동으로 이전 화면으로 돌아갈지 여부
   final bool autoReturn;
-  
+
   /// 스캔 결과를 처리하는 콜백 함수 (선택 사항)
   /// autoReturn이 false인 경우 필수
   final Function(String)? onScan;
 
   const QRScannerPage({
-    super.key, 
+    super.key,
     this.hintText,
     this.autoReturn = true,
     this.onScan,
-  }) : assert(autoReturn == true || onScan != null, 
-      'onScan 콜백은 autoReturn이 false일 때 필수입니다.');
+  }) : assert(
+         autoReturn == true || onScan != null,
+         'onScan 콜백은 autoReturn이 false일 때 필수입니다.',
+       );
 
   @override
   State<QRScannerPage> createState() => _QRScannerPageState();
@@ -39,11 +42,11 @@ class _QRScannerPageState extends State<QRScannerPage> {
 
   void _handleScan(String code) {
     if (!_isScanning) return;
-    
+
     setState(() {
       _isScanning = false;
     });
-    
+
     if (widget.autoReturn) {
       // 스캔 결과를 이전 화면으로 전달
       Navigator.pop(context, code);
@@ -65,7 +68,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
   Widget build(BuildContext context) {
     // 로컬라이제이션 객체 가져오기
     final localizations = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(localizations.qrScanTitle),
@@ -84,9 +87,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
             },
           ),
           IconButton(
-            icon: Icon(
-              _isFrontCamera ? Icons.camera_front : Icons.camera_rear,
-            ),
+            icon: Icon(_isFrontCamera ? Icons.camera_front : Icons.camera_rear),
             tooltip: localizations.switchCamera,
             onPressed: () {
               setState(() {
@@ -119,10 +120,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
             padding: const EdgeInsets.all(16),
             child: Text(
               widget.hintText ?? localizations.scanInstructions,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 16),
               textAlign: TextAlign.center,
             ),
           ),
@@ -130,4 +128,4 @@ class _QRScannerPageState extends State<QRScannerPage> {
       ),
     );
   }
-} 
+}

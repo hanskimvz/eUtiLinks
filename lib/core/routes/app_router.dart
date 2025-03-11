@@ -17,9 +17,9 @@ class AppRouter {
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final String? routeName = settings.name;
-    
+
     developer.log('요청된 경로: $routeName', name: 'AppRouter');
-    
+
     if (routeName == login) {
       return MaterialPageRoute(builder: (_) => const LoginPage());
     } else if (routeName == home) {
@@ -34,14 +34,15 @@ class AppRouter {
       return MaterialPageRoute(builder: (_) => const InstallerPage());
     } else {
       developer.log('정의되지 않은 경로: $routeName', name: 'AppRouter');
-      
+
       return MaterialPageRoute(
-        builder: (_) => Scaffold(
-          body: Center(
-            child: Text('No route defined for ${routeName ?? "unknown"}'),
-          ),
-        ),
+        builder:
+            (_) => Scaffold(
+              body: Center(
+                child: Text('No route defined for ${routeName ?? "unknown"}'),
+              ),
+            ),
       );
     }
   }
-} 
+}

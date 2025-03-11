@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import '../../../../l10n/app_localizations.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../info_management/presentation/pages/info_management_page.dart';
@@ -222,6 +223,7 @@ class _LoginPageState extends State<LoginPage> {
       role: userData['role'],
       name: userData['name'],
       userseq: userData['userseq'].toString(),
+      level: int.tryParse(userData['level']?.toString() ?? '0') ?? 0,
     );
 
     // 사용자 이름 저장 (Remember me)
@@ -257,6 +259,7 @@ class _LoginPageState extends State<LoginPage> {
       role: 'admin',
       name: '관리자',
       userseq: '1',
+      level: 16,
     );
 
     // 사용자 이름 저장 (Remember me)

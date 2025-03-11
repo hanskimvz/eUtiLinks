@@ -170,7 +170,7 @@
     "@excelFileSaveError": {
         "placeholders": {
             "error": {
-                "type": "String"
+                "type": "Object"
             }
         }
     },
@@ -203,6 +203,7 @@
     "dataInterval": "데이터 전송주기",
     "comment": "코멘트",
     "completeInstallation": "설치 완료",
+    "completeUninstallation": "해제 완료",
     "installationCompleted": "설치가 완료되었습니다.",
     "selectDate": "날짜 선택",
     "enterComment": "설치 관련 코멘트를 입력하세요",
@@ -253,5 +254,12 @@
     "disconnectDevice": "장비 연결 해제",
     "disconnectingDevice": "장비 연결 해제 중...",
     "deviceDisconnectedSuccessfully": "장비 연결이 성공적으로 해제되었습니다",
-    "deviceDisconnectionError": "장비 연결 해제 중 오류 발생"
+    "deviceDisconnectionError": "장비 연결 해제 중 오류 발생",
+    "pendingUserApproval": "미승인 사용자 목록",
+    "noPendingUsers": "미승인 사용자가 없습니다.",
+    "dbName": "DB 이름",
+    "enterUserDbName": "사용자의 데이터베이스 이름을 입력하세요",
+    "activationStatus": "활성화 상태",
+    "userApproved": "사용자가 승인되었습니다.",
+    "approve": "승인"
 } 
