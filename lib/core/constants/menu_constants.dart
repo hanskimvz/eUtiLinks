@@ -35,7 +35,7 @@ class MenuConstants {
     ];
   }
 
-  // 현황집계 서브메뉴 항목
+  // 현황집계 서브메뉴 항목, 통계
   static List<String> getStatisticsSubmenus(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     if (localizations == null) {

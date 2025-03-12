@@ -211,41 +211,6 @@ class _InstallerPageState extends State<InstallerPage> {
     });
   }
 
-  Future<void> _logout() async {
-    final localizations = AppLocalizations.of(context)!;
-    // 로그아웃 확인 다이얼로그 표시
-    final shouldLogout =
-        await showDialog<bool>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text(localizations.logoutTitle),
-                content: Text(localizations.logoutConfirmation),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(localizations.cancel),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(localizations.logout),
-                  ),
-                ],
-              ),
-        ) ??
-        false;
-
-    if (shouldLogout) {
-      await AuthService.logout();
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      }
-    }
-  }
-
   Future<void> _openCamera() async {
     final localizations = AppLocalizations.of(context)!;
 
@@ -287,7 +252,7 @@ class _InstallerPageState extends State<InstallerPage> {
       selectedMainMenuIndex: 3,
       selectedSubMenuIndex: _selectedSubMenuIndex,
       onSubMenuSelected: _onSubMenuSelected,
-      onLogout: _logout,
+      onLogout: () => AuthService.showLogoutDialog(context),
       hideSidebar: true,
       child: Padding(
         padding: const EdgeInsets.all(16.0),

@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import '../constants/api_constants.dart';
+import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../features/auth/presentation/pages/login_page.dart';
 
 /// 인증 관련 기능을 제공하는 서비스 클래스
 class AuthService {
@@ -161,5 +164,39 @@ class AuthService {
     final levelStr = prefs.getString(_levelKey);
     final level = int.tryParse(levelStr ?? '0') ?? 0;
     return level >= requiredLevel;
+  }
+
+  /// 로그아웃 다이얼로그를 표시하고 사용자가 확인하면 로그아웃을 수행합니다.
+  static Future<void> showLogoutDialog(BuildContext context) async {
+    final localizations = AppLocalizations.of(context)!;
+    
+    // 로그아웃 확인 다이얼로그 표시
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localizations.logoutTitle),
+        content: Text(localizations.logoutConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(localizations.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(localizations.logout),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (shouldLogout) {
+      await logout();
+
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    }
   }
 }

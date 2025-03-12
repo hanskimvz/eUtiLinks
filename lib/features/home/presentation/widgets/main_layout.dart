@@ -170,10 +170,7 @@ class _MainLayoutState extends State<MainLayout> {
                     // 가운데 정렬을 위한 Spacer
                     const Spacer(),
                     // 메뉴 탭
-                    _buildMainMenuTab(
-                      0,
-                      MenuConstants.getInfoManagement(context),
-                    ),
+                    _buildMainMenuTab(0, MenuConstants.getInfoManagement(context)),
                     _buildMainMenuTab(1, MenuConstants.getStatistics(context)),
                     _buildMainMenuTab(2, MenuConstants.getSettings(context)),
                     _buildMainMenuTab(3, MenuConstants.getInstaller(context)),
@@ -262,6 +259,7 @@ class _MainLayoutState extends State<MainLayout> {
                                   left: 20.0,
                                   right: 16.0,
                                 ), // 왼쪽에 5픽셀 추가 여백
+                                leading: _getSubMenuIcon(widget.selectedMainMenuIndex, index),
                                 title: Text(subMenuItems[index]),
                                 selected: _selectedSubMenuIndex == index,
                                 selectedTileColor: Colors.grey[200],
@@ -330,5 +328,76 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       ),
     );
+  }
+
+  Widget _getSubMenuIcon(int mainIndex, int subIndex) {
+    // 메인 메뉴 인덱스에 따라 서브메뉴 아이콘 반환
+    switch (mainIndex) {
+      case 0: // 정보관리
+        return _getInfoManagementIcon(subIndex);
+      case 1: // 현황집계
+        return _getStatisticsIcon(subIndex);
+      case 2: // 설정
+        return _getSettingsIcon(subIndex);
+      case 3: // 설치자
+        return const Icon(Icons.build, color: Colors.grey);
+      default:
+        return const Icon(Icons.circle, color: Colors.grey);
+    }
+  }
+
+  Widget _getInfoManagementIcon(int subIndex) {
+    switch (subIndex) {
+      case 0: // 단말기 조회
+        return const Icon(Icons.devices, color: Colors.blue);
+      case 1: // 수신데이터 조회
+        return const Icon(Icons.data_usage, color: Colors.green);
+      case 2: // 사용량 조회
+        return const Icon(Icons.show_chart, color: Colors.orange);
+      case 3: // 이상 검침 조회/해제
+        return const Icon(Icons.warning_amber_outlined, color: Colors.red);
+      case 4: // DB 내용보기
+        return const Icon(Icons.storage, color: Colors.purple);
+      default:
+        return const Icon(Icons.circle, color: Colors.grey);
+    }
+  }
+
+  Widget _getStatisticsIcon(int subIndex) {
+    switch (subIndex) {
+      case 0: // 일일 현황
+        return const Icon(Icons.today, color: Colors.blue);
+      case 1: // 월별 현황
+        return const Icon(Icons.calendar_month, color: Colors.green);
+      case 2: // 연간 현황
+        return const Icon(Icons.calendar_today, color: Colors.orange);
+      case 3: // 가입자별 현황
+        return const Icon(Icons.people, color: Colors.purple);
+      default:
+        return const Icon(Icons.circle, color: Colors.grey);
+    }
+  }
+
+  Widget _getSettingsIcon(int subIndex) {
+    switch (subIndex) {
+      case 0: // 시스템 설정
+        return const Icon(Icons.settings, color: Colors.blue);
+      case 1: // 권한 관리
+        return const Icon(Icons.security, color: Colors.red);
+      case 2: // 사용자 관리
+        return const Icon(Icons.person, color: Colors.green);
+      case 3: // 위치 관리
+        return const Icon(Icons.location_on, color: Colors.orange);
+      case 4: // 단말기 관리
+        return const Icon(Icons.devices, color: Colors.purple);
+      case 5: // 가입자 관리
+        return const Icon(Icons.people, color: Colors.indigo);
+      case 6: // 이벤트 관리
+        return const Icon(Icons.event, color: Colors.teal);
+      case 7: // 일일 데이터 관리
+        return const Icon(Icons.data_usage, color: Colors.brown);
+      default:
+        return const Icon(Icons.circle, color: Colors.grey);
+    }
   }
 }

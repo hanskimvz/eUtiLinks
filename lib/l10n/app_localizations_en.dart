@@ -440,6 +440,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String get close => 'Close';
+
+  @override
   String get userAdded => 'User has been added successfully.';
 
   @override

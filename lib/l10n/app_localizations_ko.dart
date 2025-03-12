@@ -440,6 +440,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get save => '저장';
 
   @override
+  String get close => '닫기';
+
+  @override
   String get userAdded => '사용자가 추가되었습니다.';
 
   @override

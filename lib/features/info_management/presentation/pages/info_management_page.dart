@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import '../../../../l10n/app_localizations.dart';
+// import '../../../../l10n/app_localizations.dart';
 import '../../../../core/constants/menu_constants.dart';
 import '../../../../core/services/auth_service.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+// import '../../../auth/presentation/pages/login_page.dart';
 import '../../../home/presentation/widgets/main_layout.dart';
 import 'device_query_page.dart';
 import 'received_data_query_page.dart';
@@ -21,40 +21,6 @@ class InfoManagementPage extends StatefulWidget {
 class _InfoManagementPageState extends State<InfoManagementPage> {
   int _selectedSubMenuIndex = 0;
 
-  Future<void> _logout() async {
-    final localizations = AppLocalizations.of(context)!;
-    final shouldLogout =
-        await showDialog<bool>(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text(localizations.logoutTitle),
-                content: Text(localizations.logoutConfirmation),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(localizations.cancel),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(localizations.logout),
-                  ),
-                ],
-              ),
-        ) ??
-        false;
-
-    if (shouldLogout) {
-      await AuthService.logout();
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return MainLayout(
@@ -66,7 +32,7 @@ class _InfoManagementPageState extends State<InfoManagementPage> {
           _selectedSubMenuIndex = index;
         });
       },
-      onLogout: _logout,
+      onLogout: () => AuthService.showLogoutDialog(context),
       child: _buildSelectedPage(),
     );
   }
