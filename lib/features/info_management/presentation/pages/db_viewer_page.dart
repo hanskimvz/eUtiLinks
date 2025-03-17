@@ -338,7 +338,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                         flex: 2,
                         child: DropdownButtonFormField<String>(
                           decoration: InputDecoration(
-                            labelText: '서버 선택',
+                            labelText: 'Select Server',
                             border: const OutlineInputBorder(),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -673,9 +673,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                                 entry.value as String,
                               );
                               if (jsonValue is Map || jsonValue is List) {
-                                valueText = const JsonEncoder.withIndent(
-                                  '  ',
-                                ).convert(jsonValue);
+                                valueText = JsonEncoder.withIndent('  ').convert(jsonValue);
                                 isJson = true;
                               }
                             } catch (e) {
@@ -683,9 +681,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                             }
                           } else if (entry.value is Map ||
                               entry.value is List) {
-                            valueText = const JsonEncoder.withIndent(
-                              '  ',
-                            ).convert(entry.value);
+                            valueText = JsonEncoder.withIndent('  ').convert(entry.value);
                             isJson = true;
                           }
 
@@ -744,6 +740,52 @@ class _DbViewerPageState extends State<DbViewerPage> {
                       child: Text(localizations.copyAsJson),
                     ),
                     const SizedBox(width: 8),
+                    // Parse data 버튼은 특정 조건에서만 표시
+                    if (_selectedDb == 'gas_common' && 
+                        _selectedTable == 'misc_data' && 
+                        !(rowData['send']?.toString().contains('F*U*C*K*Y*O*U') ?? false))
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            try {
+                              // ListRecvData.vue의 parse_recv_data 함수를 참조한 파싱 로직 구현
+                              final parsedData = _parseRecvData(rowData);
+                              
+                              // 파싱된 데이터를 보여주는 다이얼로그
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Parsed Data'),
+                                    content: SizedBox(
+                                      width: MediaQuery.of(context).size.width * 0.6,
+                                      height: MediaQuery.of(context).size.height * 0.6,
+                                      child: SingleChildScrollView(
+                                        child: _buildParsedDataView(parsedData),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(),
+                                        child: Text(localizations.close),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Parse Error: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text('Parse data'),
+                        ),
+                      ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(localizations.close),
@@ -755,6 +797,386 @@ class _DbViewerPageState extends State<DbViewerPage> {
           ),
         );
       },
+    );
+  }
+
+  // ListRecvData.vue의 parse_recv_data 함수를 참조하여 데이터 파싱
+  Map<String, dynamic> _parseRecvData(Map<String, dynamic> data) {
+    final result = <String, dynamic>{};
+    
+    // 원본 데이터 복사
+    result['recv_org'] = data['recv'] ?? '';
+    result['send_org'] = data['send'] ?? '';
+    
+    // 기본 필드 파싱
+    if (result['recv_org'].toString().isNotEmpty) {
+      final recvData = result['recv_org'].toString();
+      
+      // EID, UID 파싱
+      result['eid'] = recvData.length >= 2 ? recvData.substring(0, 2).toUpperCase() : '';
+      
+      // UID 파싱 (16바이트 문자열)
+      String uid = '';
+      if (recvData.length >= 18) {
+        for (int i = 2; i < 18; i += 2) {
+          try {
+            final charCode = int.parse(recvData.substring(i, i + 2), radix: 16);
+            uid += String.fromCharCode(charCode);
+          } catch (e) {
+            // 파싱 오류 시 무시
+          }
+        }
+      }
+      result['uid'] = uid.toUpperCase();
+      
+      // 카운터 테이블 파싱 (24개 항목)
+      final countTable = <List<dynamic>>[];
+      // final tzOffset = DateTime.now().timeZoneOffset.inSeconds;
+
+      if (recvData.length >= 402) {
+        for (int i = 0; i < 24; i++) {
+          try {
+            final startIdx = 18 + i * 16;
+            if (startIdx + 16 <= recvData.length) {
+              // 타임스탬프 파싱
+              final ts = int.parse(recvData.substring(startIdx, startIdx + 8), radix: 16); // + tzOffset;
+              // 카운터 값 파싱
+              final ct = int.parse(recvData.substring(startIdx + 8, startIdx + 16), radix: 16);
+              // 날짜 변환
+              final dt = DateTime.fromMillisecondsSinceEpoch((ts + 0) * 1000);
+              final dtStr = '${dt.toIso8601String().split('T')[0]} ${dt.toIso8601String().split('T')[1].split('.')[0]}';
+              // print('ts: $ts, ct: $ct, dtStr: $dtStr');
+              countTable.add([ts, ct, dtStr]);
+            }
+          } catch (e) {
+            // 파싱 오류 시 무시
+          }
+        }
+      }
+      
+      // 시간순으로 정렬
+      countTable.sort((a, b) => (a[0] as int).compareTo(b[0] as int));
+      result['count_table'] = countTable;
+      
+      // 배터리 및 업타임 파싱
+      if (recvData.length >= 412) {
+        try {
+          result['bat'] = int.parse(recvData.substring(402, 404), radix: 16);
+          result['uptime'] = int.parse(recvData.substring(404, 412), radix: 16);
+        } catch (e) {
+          result['bat'] = 0;
+          result['uptime'] = 0;
+        }
+      }
+    }
+    
+    // 응답 데이터 파싱
+    if (result['send_org'].toString().isNotEmpty) {
+      final sendData = result['send_org'].toString();
+      
+      // RC 코드
+      result['rc'] = sendData.length >= 2 ? sendData.substring(0, 2).toUpperCase() : '';
+      
+      // SUID 파싱
+      String suid = '';
+      if (sendData.length >= 18) {
+        for (int i = 2; i < 18; i += 2) {
+          try {
+            final charCode = int.parse(sendData.substring(i, i + 2), radix: 16);
+            suid += String.fromCharCode(charCode);
+          } catch (e) {
+            // 파싱 오류 시 무시
+          }
+        }
+      }
+      result['suid'] = suid.toUpperCase();
+      
+      // 타임스탬프 및 기타 값 파싱
+      if (sendData.length >= 62) {
+        // final tzOffset = DateTime.now().timeZoneOffset.inSeconds;
+        
+        try {
+          // TSC, TSN 파싱
+          final tsc = int.parse(sendData.substring(18, 26), radix: 16);
+          final tscDt = DateTime.fromMillisecondsSinceEpoch((tsc + 0) * 1000);
+          final tscDtStr = '${tscDt.toIso8601String().split('T')[0]} ${tscDt.toIso8601String().split('T')[1].split('.')[0]}';
+          
+          final tsn = int.parse(sendData.substring(26, 34), radix: 16);
+          final tsnDt = DateTime.fromMillisecondsSinceEpoch((tsn + 0) * 1000);
+          final tsnDtStr = '${tsnDt.toIso8601String().split('T')[0]} ${tsnDt.toIso8601String().split('T')[1].split('.')[0]}';
+          
+          result['tsc'] = '$tsc ($tscDtStr)';
+          result['tsn'] = '$tsn ($tsnDtStr)';
+          
+          // CNT, MIN, MAX 파싱
+          result['cnt'] = int.parse(sendData.substring(34, 42), radix: 16);
+          result['min'] = int.parse(sendData.substring(42, 46), radix: 16);
+          result['max'] = int.parse(sendData.substring(46, 50), radix: 16);
+          
+          // SVR 파싱 (IP 주소)
+          String svr = '';
+          for (int i = 50; i < 58; i += 2) {
+            svr += '${int.parse(sendData.substring(i, i + 2), radix: 16)}.';
+          }
+          result['svr'] = svr.substring(0, svr.length - 1);
+          
+          // PRT 파싱 (포트)
+          result['prt'] = int.parse(sendData.substring(58, 62), radix: 16);
+        } catch (e) {
+          // 파싱 오류 시 기본값 설정
+          result['tsc'] = '';
+          result['tsn'] = '';
+          result['cnt'] = 0;
+          result['min'] = 0;
+          result['max'] = 0;
+          result['svr'] = '';
+          result['prt'] = 0;
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  // 파싱된 데이터를 보여주는 위젯 생성
+  Widget _buildParsedDataView(Map<String, dynamic> parsedData) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Recv 섹션
+        const Text(
+          'Recv',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SelectableText(
+            parsedData['recv_org']?.toString() ?? '',
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // 기본 정보 테이블 (EID, UID)
+        Table(
+          border: TableBorder.all(color: Colors.grey.shade300),
+          columnWidths: const {
+            0: FixedColumnWidth(100),
+            1: FlexColumnWidth(),
+          },
+          children: [
+            for (final item in ['EID', 'UID'])
+              TableRow(
+                children: [
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        item,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SelectableText(
+                        parsedData[item.toLowerCase()]?.toString() ?? '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        // 카운터 테이블
+        if ((parsedData['count_table'] as List<dynamic>?)?.isNotEmpty ?? false)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Counter Table',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Table(
+                border: TableBorder.all(color: Colors.grey.shade300),
+                columnWidths: const {
+                  0: FixedColumnWidth(100),
+                  1: FixedColumnWidth(100),
+                  2: FlexColumnWidth(),
+                },
+                children: [
+                  const TableRow(
+                    children: [
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Timestamp',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Counter Value',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            'Datetime',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  for (final count in (parsedData['count_table'] as List<dynamic>))
+                    TableRow(
+                      children: [
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(count[0].toString()),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(count[1].toString()),
+                          ),
+                        ),
+                        TableCell(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(count[2].toString()),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          ),
+        const SizedBox(height: 16),
+        
+        // 배터리 및 업타임
+        Table(
+          border: TableBorder.all(color: Colors.grey.shade300),
+          columnWidths: const {
+            0: FixedColumnWidth(100),
+            1: FlexColumnWidth(),
+          },
+          children: [
+            for (final item in ['BAT', 'UPTIME'])
+              TableRow(
+                children: [
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        item,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SelectableText(
+                        parsedData[item.toLowerCase()]?.toString() ?? '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        
+        // Send 섹션
+        const Text(
+          'Send',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SelectableText(
+            parsedData['send_org']?.toString() ?? '',
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Send 정보 테이블
+        Table(
+          border: TableBorder.all(color: Colors.grey.shade300),
+          columnWidths: const {
+            0: FixedColumnWidth(100),
+            1: FlexColumnWidth(),
+          },
+          children: [
+            for (final item in ['RC', 'SUID', 'TSC', 'TSN', 'CNT', 'MIN', 'MAX', 'SVR', 'PRT'])
+              TableRow(
+                children: [
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        item,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  TableCell(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SelectableText(
+                        parsedData[item.toLowerCase()]?.toString() ?? '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

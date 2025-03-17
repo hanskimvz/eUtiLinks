@@ -83,7 +83,7 @@ class _ImportSubscriberPageState extends State<ImportSubscriberPage> {
 
       setState(() {
         _isLoading = false;
-        print(_importedData);
+        // print(_importedData);
         _message = '${_importedData.length}개의 가입자 정보를 가져왔습니다.';
         _isSuccess = true;
       });
