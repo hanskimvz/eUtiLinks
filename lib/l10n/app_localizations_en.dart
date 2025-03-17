@@ -648,6 +648,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectInterval => 'Select Interval';
 
   @override
+  String get pleaseSelect => 'Select';
+
+  @override
   String scanCompleted(Object code) {
     return 'Code scan completed: $code';
   }
@@ -783,4 +786,130 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get approve => 'Approve';
+
+  @override
+  String get categoryResidential => 'Residential';
+
+  @override
+  String get categoryCookingHeating => 'Cooking & Heating';
+
+  @override
+  String get categoryCookingOnly => 'Cooking Only';
+
+  @override
+  String get categoryHeatingOnly => 'Heating Only';
+
+  @override
+  String get categoryOther => 'Other';
+
+  @override
+  String get deviceClass25 => '2.5(G1.6)';
+
+  @override
+  String get deviceClass4 => '4(G2.5)';
+
+  @override
+  String get deviceClass6 => '6(G4)';
+
+  @override
+  String get deviceClass10 => '10(G6)';
+
+  @override
+  String get deviceClass16 => '16(G10)';
+
+  @override
+  String get deviceClass25G16 => '25(G16)';
+
+  @override
+  String get deviceClass40 => '40(G25)';
+
+  @override
+  String get deviceClass65 => '65(G40)';
+
+  @override
+  String get deviceClass100 => '100(G65)';
+
+  @override
+  String get deviceClass160 => '160(G100)';
+
+  @override
+  String get deviceClass250 => '250(G160)';
+
+  @override
+  String get deviceClass400 => '400(G250)';
+
+  @override
+  String get deviceClass650 => '650(G400)';
+
+  @override
+  String get deviceClass1000 => '1000(G650)';
+
+  @override
+  String get indoor => 'Indoor';
+
+  @override
+  String get outdoor => 'Outdoor';
+
+  @override
+  String get maximum => 'Maximum';
+
+  @override
+  String get minimum => 'Minimum';
+
+  @override
+  String get serverIp => 'Server IP';
+
+  @override
+  String get initialCommunication => 'Initial Communication';
+
+  @override
+  String get lastTimestamp => 'Last Timestamp';
+
+  @override
+  String get uptime => 'Uptime';
+
+  @override
+  String get days => ' days ';
+
+  @override
+  String get hours => ' hours ';
+
+  @override
+  String get minutes => ' minutes ';
+
+  @override
+  String get secondsUnit => ' seconds';
+
+  @override
+  String get selectTable => 'Select Table';
+
+  @override
+  String get limit => 'Limit';
+
+  @override
+  String get orderBy => 'Order By (key: asc/desc)';
+
+  @override
+  String get filter => 'Filter (JSON)';
+
+  @override
+  String get query => 'Query';
+
+  @override
+  String get tableData => 'Table Data';
+
+  @override
+  String get rows => 'rows';
+
+  @override
+  String get dataDetails => 'Data Details';
+
+  @override
+  String get dataCopied => 'Data copied to clipboard';
+
+  @override
+  String get copyAsJson => 'Copy as JSON';
+
+  @override
+  String get noData => 'No data';
 }

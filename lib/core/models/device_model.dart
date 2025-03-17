@@ -26,6 +26,13 @@ class DeviceModel {
   final String? releaseDate;
   final String? installerId;
   final int? no_;
+  final String? comment;
+  final int? initialCount;
+  final String? installDate;
+  final String? serverIp;
+  final int? serverPort;
+  final int? lastTimestamp;
+  final String? outdoor;
 
   DeviceModel({
     required this.deviceUid,
@@ -55,6 +62,13 @@ class DeviceModel {
     this.releaseDate,
     this.installerId,
     this.no_,
+    this.comment,
+    this.initialCount,
+    this.installDate,
+    this.serverIp,
+    this.serverPort,
+    this.lastTimestamp,
+    this.outdoor,
   });
 
   factory DeviceModel.fromJson(Map<String, dynamic> json) {
@@ -82,17 +96,30 @@ class DeviceModel {
       }
     }
 
+    int? parseIntValue(dynamic value) {
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is String) {
+        try {
+          return int.parse(value);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return DeviceModel(
       deviceUid: json['device_uid'] ?? '',
-      lastCount: json['last_count'] is int ? json['last_count'] : null,
+      lastCount: parseIntValue(json['last_count']),
       lastAccess: json['last_access'],
       flag: flagValue,
-      uptime: json['uptime'] is int ? json['uptime'] : null,
+      uptime: parseIntValue(json['uptime']),
       initialAccess: json['initial_access'],
-      refInterval: json['ref_interval'] is int ? json['ref_interval'] : null,
-      minimum: json['minimum'] is int ? json['minimum'] : null,
-      maximum: json['maximum'] is int ? json['maximum'] : null,
-      battery: json['battery'] is int ? json['battery'] : null,
+      refInterval: parseIntValue(json['ref_interval']),
+      minimum: parseIntValue(json['minimum']),
+      maximum: parseIntValue(json['maximum']),
+      battery: parseIntValue(json['battery']),
       customerName: json['customer_name'],
       customerNo: json['customer_no'],
       addrProv: json['addr_prov'],
@@ -110,6 +137,52 @@ class DeviceModel {
       releaseDate: json['release_date'],
       installerId: json['installer_id'],
       no_: noValue,
+      comment: json['comment'],
+      initialCount: parseIntValue(json['initial_count']),
+      installDate: json['install_date'],
+      serverIp: json['server_ip'],
+      serverPort: parseIntValue(json['server_port']),
+      lastTimestamp: parseIntValue(json['last_timestamp']),
+      outdoor: json['outdoor'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'device_uid': deviceUid,
+      'last_count': lastCount,
+      'last_access': lastAccess,
+      'flag': flag,
+      'uptime': uptime,
+      'initial_access': initialAccess,
+      'ref_interval': refInterval,
+      'minimum': minimum,
+      'maximum': maximum,
+      'battery': battery,
+      'customer_name': customerName,
+      'customer_no': customerNo,
+      'addr_prov': addrProv,
+      'addr_city': addrCity,
+      'addr_dist': addrDist,
+      'addr_dong': addrDong,
+      'addr_detail': addrDetail,
+      'share_house': shareHouse,
+      'addr_apt': addrApt,
+      'category': category,
+      'subscriber_no': subscriberNo,
+      'meter_id': meterId,
+      'class': deviceClass,
+      'in_outdoor': inOutdoor,
+      'release_date': releaseDate,
+      'installer_id': installerId,
+      'no_': no_,
+      'comment': comment,
+      'initial_count': initialCount,
+      'install_date': installDate,
+      'server_ip': serverIp,
+      'server_port': serverPort,
+      'last_timestamp': lastTimestamp,
+      'outdoor': outdoor,
+    };
   }
 } 

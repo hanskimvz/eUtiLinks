@@ -1337,6 +1337,12 @@ abstract class AppLocalizations {
   /// **'Select Interval'**
   String get selectInterval;
 
+  /// No description provided for @pleaseSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get pleaseSelect;
+
   /// No description provided for @scanCompleted.
   ///
   /// In en, this message translates to:
@@ -1606,6 +1612,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Approve'**
   String get approve;
+
+  /// No description provided for @categoryResidential.
+  ///
+  /// In en, this message translates to:
+  /// **'Residential'**
+  String get categoryResidential;
+
+  /// No description provided for @categoryCookingHeating.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooking & Heating'**
+  String get categoryCookingHeating;
+
+  /// No description provided for @categoryCookingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooking Only'**
+  String get categoryCookingOnly;
+
+  /// No description provided for @categoryHeatingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Heating Only'**
+  String get categoryHeatingOnly;
+
+  /// No description provided for @categoryOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get categoryOther;
+
+  /// No description provided for @deviceClass25.
+  ///
+  /// In en, this message translates to:
+  /// **'2.5(G1.6)'**
+  String get deviceClass25;
+
+  /// No description provided for @deviceClass4.
+  ///
+  /// In en, this message translates to:
+  /// **'4(G2.5)'**
+  String get deviceClass4;
+
+  /// No description provided for @deviceClass6.
+  ///
+  /// In en, this message translates to:
+  /// **'6(G4)'**
+  String get deviceClass6;
+
+  /// No description provided for @deviceClass10.
+  ///
+  /// In en, this message translates to:
+  /// **'10(G6)'**
+  String get deviceClass10;
+
+  /// No description provided for @deviceClass16.
+  ///
+  /// In en, this message translates to:
+  /// **'16(G10)'**
+  String get deviceClass16;
+
+  /// No description provided for @deviceClass25G16.
+  ///
+  /// In en, this message translates to:
+  /// **'25(G16)'**
+  String get deviceClass25G16;
+
+  /// No description provided for @deviceClass40.
+  ///
+  /// In en, this message translates to:
+  /// **'40(G25)'**
+  String get deviceClass40;
+
+  /// No description provided for @deviceClass65.
+  ///
+  /// In en, this message translates to:
+  /// **'65(G40)'**
+  String get deviceClass65;
+
+  /// No description provided for @deviceClass100.
+  ///
+  /// In en, this message translates to:
+  /// **'100(G65)'**
+  String get deviceClass100;
+
+  /// No description provided for @deviceClass160.
+  ///
+  /// In en, this message translates to:
+  /// **'160(G100)'**
+  String get deviceClass160;
+
+  /// No description provided for @deviceClass250.
+  ///
+  /// In en, this message translates to:
+  /// **'250(G160)'**
+  String get deviceClass250;
+
+  /// No description provided for @deviceClass400.
+  ///
+  /// In en, this message translates to:
+  /// **'400(G250)'**
+  String get deviceClass400;
+
+  /// No description provided for @deviceClass650.
+  ///
+  /// In en, this message translates to:
+  /// **'650(G400)'**
+  String get deviceClass650;
+
+  /// No description provided for @deviceClass1000.
+  ///
+  /// In en, this message translates to:
+  /// **'1000(G650)'**
+  String get deviceClass1000;
+
+  /// No description provided for @indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor'**
+  String get indoor;
+
+  /// No description provided for @outdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor'**
+  String get outdoor;
+
+  /// No description provided for @maximum.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum'**
+  String get maximum;
+
+  /// No description provided for @minimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum'**
+  String get minimum;
+
+  /// No description provided for @serverIp.
+  ///
+  /// In en, this message translates to:
+  /// **'Server IP'**
+  String get serverIp;
+
+  /// No description provided for @initialCommunication.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial Communication'**
+  String get initialCommunication;
+
+  /// No description provided for @lastTimestamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Timestamp'**
+  String get lastTimestamp;
+
+  /// No description provided for @uptime.
+  ///
+  /// In en, this message translates to:
+  /// **'Uptime'**
+  String get uptime;
+
+  /// No description provided for @days.
+  ///
+  /// In en, this message translates to:
+  /// **' days '**
+  String get days;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **' hours '**
+  String get hours;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **' minutes '**
+  String get minutes;
+
+  /// No description provided for @secondsUnit.
+  ///
+  /// In en, this message translates to:
+  /// **' seconds'**
+  String get secondsUnit;
+
+  /// No description provided for @selectTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Table'**
+  String get selectTable;
+
+  /// No description provided for @limit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit'**
+  String get limit;
+
+  /// No description provided for @orderBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Order By (key: asc/desc)'**
+  String get orderBy;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter (JSON)'**
+  String get filter;
+
+  /// No description provided for @query.
+  ///
+  /// In en, this message translates to:
+  /// **'Query'**
+  String get query;
+
+  /// No description provided for @tableData.
+  ///
+  /// In en, this message translates to:
+  /// **'Table Data'**
+  String get tableData;
+
+  /// No description provided for @rows.
+  ///
+  /// In en, this message translates to:
+  /// **'rows'**
+  String get rows;
+
+  /// No description provided for @dataDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Details'**
+  String get dataDetails;
+
+  /// No description provided for @dataCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Data copied to clipboard'**
+  String get dataCopied;
+
+  /// No description provided for @copyAsJson.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy as JSON'**
+  String get copyAsJson;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noData;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -126,14 +126,7 @@ class DeviceService {
         body: jsonEncode({
           'action': 'modify',
           'format': 'json',
-          'data': {
-            'device_uid': device.deviceUid,
-            'customer_name': device.customerName,
-            'customer_no': device.customerNo,
-            'meter_id': device.meterId,
-            // 'initial_count': device.initialCount,
-            'ref_interval': device.refInterval,
-          },
+          'data': device.toJson(),
           ...authData,
         }),
       );
@@ -207,6 +200,7 @@ class DeviceService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data'] != null && data['data'].isNotEmpty) {
+          // print(data['data']);
           return DeviceModel.fromJson(data['data']);
         }
         throw Exception('장치 정보를 찾을 수 없습니다');
@@ -231,35 +225,7 @@ class DeviceService {
       final Map<String, dynamic> requestBody = {
         'action': 'list',
         'format': 'json',
-        'fields':
-            fields ??
-            [
-              'device_uid',
-              'last_count',
-              'last_access',
-              'flag',
-              'uptime',
-              'initial_access',
-              'ref_interval',
-              'minimum',
-              'maximum',
-              'battery',
-              'customer_name',
-              'customer_no',
-              'addr_prov',
-              'addr_city',
-              'addr_dist',
-              'addr_detail',
-              'share_house',
-              'addr_apt',
-              'category',
-              'subscriber_no',
-              'meter_id',
-              'class',
-              'in_outdoor',
-              'release_date',
-              'installer_id',
-            ],
+        'fields':  fields ?? [],
         ...authData,
       };
 

@@ -26,7 +26,6 @@ class SubscriberService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'action': 'list',
-
           'fields': [],
           'format': 'json',
           ...AuthService.authData,
@@ -119,10 +118,15 @@ class SubscriberService {
         await AuthService.initAuthData();
       }
 
-      final response = await http.put(
+      final response = await http.post(
         Uri.parse('$baseUrl/api/subscriber'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({...subscriberData, ...AuthService.authData}),
+        body: json.encode({
+          'action': 'modify',
+          'format': 'json',
+          'data': subscriberData,
+          ...AuthService.authData,
+        }),
       );
 
       if (response.statusCode != 200) {

@@ -352,6 +352,7 @@ class _InstallerDeviceInfoPageState extends State<InstallerDeviceInfoPage> {
                   : 0.0,
           'ref_interval': _selectedInterval, // 초 단위
           'comment': _commentController.text,
+          'flag': _isActive ? true : false,
         },
       };
       // print(requestData);

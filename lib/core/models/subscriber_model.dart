@@ -9,6 +9,8 @@ class SubscriberModel {
   final String? addrDist;
   final String? addrDetail;
   final String? addrApt;
+  final String? addrDong;
+  final String? addrRoad;
   final bool isActive;
   final String? phoneNumber;
   final String? email;
@@ -40,6 +42,8 @@ class SubscriberModel {
     this.addrDist,
     this.addrDetail,
     this.addrApt,
+    this.addrDong,
+    this.addrRoad,
     required this.isActive,
     this.phoneNumber,
     this.email,
@@ -119,6 +123,8 @@ class SubscriberModel {
       addrDist: json['addr_dist'],
       addrDetail: json['addr_detail'],
       addrApt: json['addr_apt'],
+      addrDong: json['addr_dong'],
+      addrRoad: json['addr_road'],
       isActive: isActiveValue,
       phoneNumber: json['phone_number'],
       email: json['email'],

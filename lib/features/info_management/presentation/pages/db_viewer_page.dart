@@ -18,7 +18,14 @@ class _DbViewerPageState extends State<DbViewerPage> {
   final _tableController = TextEditingController();
   final _filterController = TextEditingController();
   final _limitController = TextEditingController(text: '100');
-  final _orderByController = TextEditingController(text: '{"datetime":-1}');
+  final _orderByController = TextEditingController(text: 'datetime: desc');
+
+  // 서버 목록 및 선택된 서버
+  final List<Map<String, String>> _servers = [
+    {'name': '1. hongkong aliyun', 'id': '1'},
+    {'name': '2. oracle cloud', 'id': '2'},
+  ];
+  String? _selectedServerId;
 
   List<String> _dbNames = [];
   String? _selectedDb;
@@ -35,6 +42,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
   @override
   void initState() {
     super.initState();
+    _selectedServerId = _servers[0]['id']; // 기본 서버 ID 설정
     _loadDbTree();
   }
 
@@ -58,12 +66,13 @@ class _DbViewerPageState extends State<DbViewerPage> {
       await AuthService.initAuthData();
 
       final response = await http.post(
-        Uri.parse('${ApiConstants.serverUrl}/api/query'),
+        Uri.parse('${ApiConstants.serverUrl}/api/database'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'action': 'get_db_tree',
+          'action': 'list',
           'page': 'database',
           'format': 'json',
+          'server': _selectedServerId, // 서버 ID 전송
           ...AuthService.authData,
         }),
       );
@@ -172,18 +181,18 @@ class _DbViewerPageState extends State<DbViewerPage> {
       }
 
       final response = await http.post(
-        Uri.parse('${ApiConstants.serverUrl}/api/query'),
+        Uri.parse('${ApiConstants.serverUrl}/api/database'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'page': 'database',
-          'action': 'get_db_data',
+          'action': 'view',
           'table': _selectedTable,
           'fields': [],
           'filter': filter,
           'limit': limit,
-          'orderby': json.decode(_orderByController.text),
+          'orderby': _orderByController.text,
           'format': 'json',
           'db': _selectedDb,
+          'server': _selectedServerId, // 서버 ID 전송
           ...AuthService.authData,
         }),
       );
@@ -305,12 +314,12 @@ class _DbViewerPageState extends State<DbViewerPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'View DB Data (Developer Only)',
+            localizations.dbViewer,
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
-            'View the contents of the database table. Use it only for development and debugging.',
+            localizations.dbViewerDescription,
             style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
           const SizedBox(height: 16),
@@ -324,14 +333,47 @@ class _DbViewerPageState extends State<DbViewerPage> {
                 children: [
                   Row(
                     children: [
+                      // 서버 선택
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<String>(
+                          decoration: InputDecoration(
+                            labelText: '서버 선택',
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                          value: _selectedServerId,
+                          items: _servers.map((server) {
+                            return DropdownMenuItem<String>(
+                              value: server['id'],
+                              child: Text(server['name']!),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedServerId = value;
+                              // 서버가 변경되면 DB 목록 다시 로드
+                              _dbNames = [];
+                              _tables = [];
+                              _selectedDb = null;
+                              _selectedTable = null;
+                              _loadDbTree();
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       // DB 선택
                       Expanded(
                         flex: 2,
                         child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Select DB',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                          decoration: InputDecoration(
+                            labelText: localizations.dbName,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
@@ -360,10 +402,10 @@ class _DbViewerPageState extends State<DbViewerPage> {
                       Expanded(
                         flex: 3,
                         child: DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Select Table',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                          decoration: InputDecoration(
+                            labelText: localizations.selectTable,
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
@@ -389,11 +431,11 @@ class _DbViewerPageState extends State<DbViewerPage> {
                         flex: 1,
                         child: TextField(
                           controller: _limitController,
-                          decoration: const InputDecoration(
-                            labelText: 'limit',
+                          decoration: InputDecoration(
+                            labelText: localizations.limit,
                             hintText: '100',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
@@ -407,11 +449,11 @@ class _DbViewerPageState extends State<DbViewerPage> {
                         flex: 2,
                         child: TextField(
                           controller: _orderByController,
-                          decoration: const InputDecoration(
-                            labelText: 'Order By (JSON)',
-                            hintText: '{"datetime":-1}',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                          decoration: InputDecoration(
+                            labelText: localizations.orderBy,
+                            hintText: 'datetime: desc',
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
@@ -424,11 +466,11 @@ class _DbViewerPageState extends State<DbViewerPage> {
                         flex: 3,
                         child: TextField(
                           controller: _filterController,
-                          decoration: const InputDecoration(
-                            labelText: 'filter (JSON)',
+                          decoration: InputDecoration(
+                            labelText: localizations.filter,
                             hintText: '{"field": "value"}',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 12,
                             ),
@@ -445,8 +487,8 @@ class _DbViewerPageState extends State<DbViewerPage> {
                       // 조회 버튼
                       ElevatedButton.icon(
                         onPressed: _queryTable,
-                        icon: const Icon(Icons.search),
-                        label: const Text('Query'),
+                        icon: const Icon(Icons.search, color: Colors.white),
+                        label: Text(localizations.query),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -489,7 +531,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : _data.isEmpty
-                    ? const Center(child: Text('No data.'))
+                    ? Center(child: Text(localizations.noData))
                     : Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -499,7 +541,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 16.0),
                               child: Text(
-                                '$_selectedTable Table Data (${_data.length} rows)',
+                                '$_selectedTable ${localizations.tableData} (${_data.length} ${localizations.rows})',
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -508,21 +550,27 @@ class _DbViewerPageState extends State<DbViewerPage> {
                             ),
                             Expanded(
                               child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
+                                scrollDirection: Axis.vertical,
                                 child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
                                   child: DataTable(
                                     columnSpacing: 20,
                                     headingRowHeight: 56,
                                     dataRowMinHeight: 38,
                                     dataRowMaxHeight: 38,
+                                    horizontalMargin: 10,
                                     showCheckboxColumn: false,
                                     columns:
                                         _columns.map((column) {
                                           return DataColumn(
-                                            label: Text(
-                                              column,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
+                                            label: Container(
+                                              constraints: const BoxConstraints(minWidth: 100, maxWidth: 200),
+                                              child: Text(
+                                                column,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           );
@@ -537,13 +585,15 @@ class _DbViewerPageState extends State<DbViewerPage> {
                                                   // 텍스트 길이가 32자를 초과하면 자르고 "..."를 추가
                                                   if (displayText.length > 64) {
                                                     displayText =
-                                                        "${displayText.substring(0, 64)}...${displayText.length}";
+                                                        "${displayText.substring(0, 64)}...";
                                                   }
                                                   return DataCell(
-                                                    Text(
-                                                      displayText,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                    Container(
+                                                      constraints: const BoxConstraints(minWidth: 100, maxWidth: 200),
+                                                      child: Text(
+                                                        displayText,
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
                                                     ),
                                                   );
                                                 }).toList(),
@@ -577,6 +627,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
     BuildContext context,
     Map<String, dynamic> rowData,
   ) {
+    final localizations = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -595,7 +646,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Data Details',
+                      localizations.dataDetails,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -685,17 +736,17 @@ class _DbViewerPageState extends State<DbViewerPage> {
                         final jsonData = json.encode(rowData);
                         Clipboard.setData(ClipboardData(text: jsonData));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Data copied to clipboard.'),
+                          SnackBar(
+                            content: Text(localizations.dataCopied),
                           ),
                         );
                       },
-                      child: const Text('Copy as JSON'),
+                      child: Text(localizations.copyAsJson),
                     ),
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Close'),
+                      child: Text(localizations.close),
                     ),
                   ],
                 ),

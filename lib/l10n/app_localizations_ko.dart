@@ -648,6 +648,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get selectInterval => '주기 선택';
 
   @override
+  String get pleaseSelect => '선택하세요';
+
+  @override
   String scanCompleted(Object code) {
     return '코드 스캔 완료: $code';
   }
@@ -783,4 +786,130 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get approve => '승인';
+
+  @override
+  String get categoryResidential => '주택용';
+
+  @override
+  String get categoryCookingHeating => '취사난방용';
+
+  @override
+  String get categoryCookingOnly => '취사전용';
+
+  @override
+  String get categoryHeatingOnly => '난방전용';
+
+  @override
+  String get categoryOther => '기타';
+
+  @override
+  String get deviceClass25 => '2.5(G1.6)';
+
+  @override
+  String get deviceClass4 => '4(G2.5)';
+
+  @override
+  String get deviceClass6 => '6(G4)';
+
+  @override
+  String get deviceClass10 => '10(G6)';
+
+  @override
+  String get deviceClass16 => '16(G10)';
+
+  @override
+  String get deviceClass25G16 => '25(G16)';
+
+  @override
+  String get deviceClass40 => '40(G25)';
+
+  @override
+  String get deviceClass65 => '65(G40)';
+
+  @override
+  String get deviceClass100 => '100(G65)';
+
+  @override
+  String get deviceClass160 => '160(G100)';
+
+  @override
+  String get deviceClass250 => '250(G160)';
+
+  @override
+  String get deviceClass400 => '400(G250)';
+
+  @override
+  String get deviceClass650 => '650(G400)';
+
+  @override
+  String get deviceClass1000 => '1000(G650)';
+
+  @override
+  String get indoor => '실내';
+
+  @override
+  String get outdoor => '실외';
+
+  @override
+  String get maximum => '최대값';
+
+  @override
+  String get minimum => '최소값';
+
+  @override
+  String get serverIp => '서버 IP';
+
+  @override
+  String get initialCommunication => '초기 통신';
+
+  @override
+  String get lastTimestamp => '마지막 타임스탬프';
+
+  @override
+  String get uptime => '가동시간';
+
+  @override
+  String get days => '일 ';
+
+  @override
+  String get hours => '시간 ';
+
+  @override
+  String get minutes => '분 ';
+
+  @override
+  String get secondsUnit => '초';
+
+  @override
+  String get selectTable => '테이블 선택';
+
+  @override
+  String get limit => '제한';
+
+  @override
+  String get orderBy => '정렬 (key: asc/desc)';
+
+  @override
+  String get filter => '필터 (JSON)';
+
+  @override
+  String get query => '조회';
+
+  @override
+  String get tableData => '테이블 데이터';
+
+  @override
+  String get rows => '행';
+
+  @override
+  String get dataDetails => '데이터 상세 정보';
+
+  @override
+  String get dataCopied => '데이터가 클립보드에 복사되었습니다';
+
+  @override
+  String get copyAsJson => 'JSON으로 복사';
+
+  @override
+  String get noData => '데이터 없음';
 }

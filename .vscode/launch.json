@@ -6,18 +6,22 @@
     "configurations": [
         
         {
-            "name": "gas_installer",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "gas_installer (profile mode)",
+            "name": "eUtiLinks",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
         },
         {
-            "name": "gas_installer (release mode)",
+            "name": "eUtiLinks (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile",
+            "args": [
+                "--web-port=8080",
+                "--web-hostname=0.0.0.0"
+            ]
+        },
+        {
+            "name": "eUtiLinks (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -9,6 +9,7 @@ import '../../../../core/models/subscriber_model.dart';
 import '../../../../core/services/subscriber_service.dart';
 import '../../../../core/constants/api_constants.dart';
 import 'subscriber_info_page.dart';
+import 'import_subscriber_page.dart';
 
 class SubscriberManagementPage extends StatefulWidget {
   const SubscriberManagementPage({super.key});
@@ -299,8 +300,13 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
   }
 
   void _showAddSubscriberDialog() {
-    // 가입자 추가 다이얼로그 구현
-    // 실제 구현은 추후에 진행
+    // 가입자 추가 페이지로 이동
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ImportSubscriberPage(),
+      ),
+    );
   }
 
   Widget _buildStatCard({
@@ -374,7 +380,7 @@ class _SubscriberManagementPageState extends State<SubscriberManagementPage> {
               const SizedBox(width: 16),
               ElevatedButton.icon(
                 onPressed: _showAddSubscriberDialog,
-                icon: const Icon(Icons.add),
+                icon: const Icon(Icons.add, color: Colors.white),
                 label: Text(localizations.addSubscriber),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
