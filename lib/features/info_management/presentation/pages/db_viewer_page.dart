@@ -59,6 +59,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
+      // 데이터는 초기화하지 않음
     });
 
     try {
@@ -111,6 +112,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
               }
             }
             _isLoading = false;
+            // 데이터 테이블은 초기화하지 않음
           });
         } else {
           throw Exception('Unexpected response format');
@@ -355,12 +357,13 @@ class _DbViewerPageState extends State<DbViewerPage> {
                           onChanged: (value) {
                             setState(() {
                               _selectedServerId = value;
-                              // 서버가 변경되면 DB 목록 다시 로드
+                              // 서버가 변경되면 DB 목록만 로드하고 데이터는 갱신하지 않음
                               _dbNames = [];
                               _tables = [];
                               _selectedDb = null;
                               _selectedTable = null;
                               _loadDbTree();
+                              // 데이터 테이블은 초기화하지 않음
                             });
                           },
                         ),
@@ -393,6 +396,7 @@ class _DbViewerPageState extends State<DbViewerPage> {
                               _tables = _dbCollections[value] ?? [];
                               _selectedTable =
                                   _tables.isNotEmpty ? _tables.first : null;
+                              // 데이터 테이블은 초기화하지 않음
                             });
                           },
                         ),
@@ -517,6 +521,27 @@ class _DbViewerPageState extends State<DbViewerPage> {
                     child: Text(
                       _errorMessage,
                       style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 16),
+          
+          // 안내 메시지
+          if (_data.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.blue[50],
+              child: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '서버나 DB, 테이블 변경 후 조회 버튼을 클릭하여 데이터를 갱신하세요.',
+                      style: const TextStyle(color: Colors.blue),
                     ),
                   ),
                 ],
